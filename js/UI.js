@@ -865,6 +865,29 @@ class ModernBudgetUI {
         });
       }, 100);
     }
+
+    // Bind analytics tab events
+    const analyticsTabs = document.querySelectorAll(".analytics-tab");
+    analyticsTabs.forEach((tab) => {
+      tab.addEventListener("click", (e) => {
+        e.preventDefault();
+        const tabName = tab.getAttribute("data-tab");
+        if (tabName) {
+          this.switchAnalyticsTab(tabName);
+        }
+      });
+    });
+
+    // Bind goal import modal
+    window.showGoalImportModal = () => this.showGoalImportModal();
+    window.hideGoalImportModal = () => this.hideGoalImportModal();
+    window.importGoals = () => this.importGoals();
+
+    // Add animations to stat cards on dashboard
+    const statCards = document.querySelectorAll(".stat-card");
+    statCards.forEach((card) => {
+      card.classList.add("animate-in");
+    });
   }
 
   initializeAnalyticsCharts() {
@@ -1713,6 +1736,71 @@ class ModernBudgetUI {
                 `;
       }
     }
+  }
+
+  showGoalImportModal() {
+    const modal = document.getElementById("goalImportModal");
+    if (modal) {
+      modal.classList.add("show");
+      document.body.classList.add("modal-open");
+    }
+  }
+
+  hideGoalImportModal() {
+    const modal = document.getElementById("goalImportModal");
+    if (modal) {
+      modal.classList.remove("show");
+      document.body.classList.remove("modal-open");
+    }
+  }
+
+  async importGoals() {
+    const fileInput = document.getElementById("goalImportFile");
+    if (!fileInput || !fileInput.files.length) {
+      this.showNotification("Please select a file to import", "error");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const goals = JSON.parse(e.target.result);
+        if (!Array.isArray(goals)) {
+          throw new Error("Invalid file format");
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const goal of goals) {
+          try {
+            await this.budgetManager.addGoal(goal.name, goal.target_amount, goal.current_amount || 0, goal.deadline);
+            successCount++;
+          } catch (error) {
+            console.error("Failed to import goal:", error);
+            errorCount++;
+          }
+        }
+
+        this.hideGoalImportModal();
+        this.showNotification(
+          `Imported ${successCount} goals successfully${errorCount ? ` (${errorCount} failed)` : ""}`,
+          successCount > 0 ? "success" : "error"
+        );
+        this.renderGoals();
+      } catch (error) {
+        console.error("Failed to parse goals file:", error);
+        this.showNotification("Failed to parse goals file", "error");
+      }
+    };
+
+    reader.onerror = () => {
+      this.showNotification("Failed to read file", "error");
+    };
+
+    reader.readAsText(file);
   }
 }
 
