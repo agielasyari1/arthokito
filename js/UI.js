@@ -1,29 +1,44 @@
 // ===== MAIN UI CLASS =====
 class ModernBudgetUI {
-  constructor(budgetManager = null) {
-    this.budgetManager = budgetManager || new BudgetManager();
-    this.analytics = new Analytics(this.budgetManager);
-    this.components = new UIComponents(this.budgetManager, this.analytics);
+  constructor(budgetManager) {
+    this.budgetManager = budgetManager;
     this.currentView = "dashboard";
+    this.cache = {
+      accounts: [],
+      transactions: [],
+      goals: [],
+      categories: [],
+      monthlyStats: null,
+    };
+    this.analytics = new Analytics(budgetManager);
+    this.components = new UIComponents(this.budgetManager, this.analytics);
     this.isTransitioning = false;
     this.analyticsMode = "overview"; // overview, patterns, predictions, budget
     this.initialized = false;
+    this.init();
   }
 
-  async initialize() {
+  setBudgetManager(manager) {
+    this.budgetManager = manager;
+    this.analytics = new Analytics(manager);
+    // Refresh current view with new budget manager
+    this.render();
+  }
+
+  async init() {
     if (this.initialized) return;
 
-    this.bindEvents();
-    this.initializeTheme();
-    this.preloadData();
-    this.initialized = true;
-    console.log("✅ ModernBudgetUI initialized");
-  }
-
-  init() {
-    this.createLayout();
-    this.initialize();
-    this.render();
+    try {
+      this.createLayout();
+      this.bindEvents();
+      this.initializeTheme();
+      this.preloadData();
+      this.initialized = true;
+      console.log("✅ ModernBudgetUI initialized");
+    } catch (error) {
+      console.error("❌ Failed to initialize ModernBudgetUI:", error);
+      this.showToast("Failed to initialize application", "error");
+    }
   }
 
   // Method for compatibility with SimpleUI
