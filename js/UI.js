@@ -866,12 +866,11 @@ class ModernBudgetUI {
       }, 100);
     }
 
-    // Bind analytics tab events
+    // Bind analytics tab switching
     const analyticsTabs = document.querySelectorAll(".analytics-tab");
     analyticsTabs.forEach((tab) => {
       tab.addEventListener("click", (e) => {
-        e.preventDefault();
-        const tabName = tab.getAttribute("data-tab");
+        const tabName = e.currentTarget.getAttribute("data-tab");
         if (tabName) {
           this.switchAnalyticsTab(tabName);
         }
@@ -880,12 +879,11 @@ class ModernBudgetUI {
 
     // Bind goal import modal
     window.showGoalImportModal = () => this.showGoalImportModal();
-    window.hideGoalImportModal = () => this.hideGoalImportModal();
-    window.importGoals = () => this.importGoals();
 
     // Add animations to stat cards on dashboard
     const statCards = document.querySelectorAll(".stat-card");
-    statCards.forEach((card) => {
+    statCards.forEach((card, index) => {
+      card.style.animationDelay = `${index * 0.1}s`;
       card.classList.add("animate-in");
     });
   }
@@ -1739,34 +1737,45 @@ class ModernBudgetUI {
   }
 
   showGoalImportModal() {
-    const modal = document.getElementById("goalImportModal");
-    if (modal) {
-      modal.classList.add("show");
-      document.body.classList.add("modal-open");
-    }
-  }
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Goals</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="goalImportFile">Select JSON file:</label>
+                    <input type="file" id="goalImportFile" accept=".json">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" id="importGoalsBtn">Import Goals</button>
+                </div>
+            </div>
+        </div>
+    `;
 
-  hideGoalImportModal() {
-    const modal = document.getElementById("goalImportModal");
-    if (modal) {
-      modal.classList.remove("show");
-      document.body.classList.remove("modal-open");
-    }
-  }
+    document.body.appendChild(modal);
+    modal.classList.add("show");
 
-  async importGoals() {
-    const fileInput = document.getElementById("goalImportFile");
-    if (!fileInput || !fileInput.files.length) {
-      this.showNotification("Please select a file to import", "error");
-      return;
-    }
+    // Handle file selection and import
+    const fileInput = modal.querySelector("#goalImportFile");
+    const importBtn = modal.querySelector("#importGoalsBtn");
+    const closeBtn = modal.querySelector(".close-modal");
 
-    const file = fileInput.files[0];
-    const reader = new FileReader();
+    importBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        this.showNotification("Please select a file first", "error");
+        return;
+      }
 
-    reader.onload = async (e) => {
       try {
-        const goals = JSON.parse(e.target.result);
+        const text = await file.text();
+        const goals = JSON.parse(text);
+
         if (!Array.isArray(goals)) {
           throw new Error("Invalid file format");
         }
@@ -1784,23 +1793,29 @@ class ModernBudgetUI {
           }
         }
 
-        this.hideGoalImportModal();
         this.showNotification(
-          `Imported ${successCount} goals successfully${errorCount ? ` (${errorCount} failed)` : ""}`,
+          `Imported ${successCount} goals successfully${errorCount > 0 ? ` (${errorCount} failed)` : ""}`,
           successCount > 0 ? "success" : "error"
         );
-        this.renderGoals();
+
+        if (successCount > 0) {
+          this.renderGoals();
+        }
       } catch (error) {
-        console.error("Failed to parse goals file:", error);
-        this.showNotification("Failed to parse goals file", "error");
+        console.error("Failed to import goals:", error);
+        this.showNotification("Failed to import goals: " + error.message, "error");
       }
-    };
+    });
 
-    reader.onerror = () => {
-      this.showNotification("Failed to read file", "error");
-    };
+    closeBtn.addEventListener("click", () => {
+      modal.remove();
+    });
 
-    reader.readAsText(file);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
   }
 }
 
