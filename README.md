@@ -1,19 +1,12 @@
-# 💰 BudgetPro - Smart Finance Manager
+# 💰 BudgetKu - Smart Financial Management
 
-<div align="center">
+**Aplikasi manajemen keuangan modern dengan integrasi Supabase dan analisis prediktif**
 
-![BudgetPro Logo](https://img.shields.io/badge/💰-BudgetPro-blue?style=for-the-badge&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)](https://www.javascript.com/)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-green.svg)](https://supabase.com/)
 
-**Aplikasi manajemen keuangan modern dengan analisis prediktif dan UI yang elegan**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
-[![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
-
-[Demo Live](https://erzambayu.github.io/budget-manager) · [Laporkan Bug](https://github.com/Erzambayu/budget-manager/issues) · [Request Fitur](https://github.com/Erzambayu/budget-manager/issues)
-
-</div>
+🌐 **[Demo Live](https://erzambayu.github.io/BudgetKu/)** · 📚 **[Documentation](./README_SUPABASE.md)** · 🐛 **[Laporkan Bug](https://github.com/Erzambayu/BudgetKu/issues)**
 
 ## 📋 Daftar Isi
 
@@ -31,9 +24,9 @@
 
 ## 🎯 Tentang Aplikasi
 
-**BudgetPro** adalah aplikasi manajemen keuangan pribadi yang modern dan powerful, dirancang untuk membantu Anda mengelola keuangan dengan lebih smart dan efisien. Dengan antarmuka yang intuitif dan fitur analisis mendalam, BudgetPro memberikan insights yang valuable untuk mengoptimalkan pengelolaan keuangan Anda.
+**BudgetKu** adalah aplikasi manajemen keuangan pribadi yang modern dan powerful, dirancang untuk membantu Anda mengelola keuangan dengan lebih smart dan efisien. Dengan antarmuka yang intuitif dan fitur analisis mendalam, BudgetKu memberikan insights yang valuable untuk mengoptimalkan pengelolaan keuangan Anda.
 
-### 🌟 Mengapa BudgetPro?
+### 🌟 Mengapa BudgetKu?
 
 - **🎨 UI/UX Modern**: Desain yang clean, responsive, dan user-friendly
 - **📊 Analisis Mendalam**: Prediksi keuangan berbasis AI dan pattern analysis  
@@ -44,228 +37,198 @@
 
 ## ✨ Fitur Utama
 
-### 💳 Manajemen Transaksi
-- ➕ Tambah pemasukan dan pengeluaran dengan mudah
-- 📝 Kategorisasi otomatis dengan icon dan warna
-- 📅 Filter berdasarkan tanggal dan kategori
-- ✏️ Edit dan hapus transaksi
-- 🔍 Pencarian transaksi
+### 🎯 **Manajemen Keuangan Lengkap**
+- **Dashboard Interaktif** - Overview keuangan dengan statistik real-time
+- **Transaksi Management** - Tambah, edit, hapus transaksi income/expense
+- **Multi-Account Support** - Kelola berbagai jenis akun (Bank, Cash, E-wallet, Investasi)
+- **Goals Tracking** - Set dan monitor progress target finansial
+- **Advanced Analytics** - Analisis mendalam dengan insights dan trends
 
-### 🏦 Manajemen Akun
-- 💰 Kelola multiple akun (Bank, E-Wallet, Cash, Investasi)
-- 📊 Real-time balance tracking
-- 🎯 Visual indicators untuk setiap jenis akun
-- 📈 History transaksi per akun
+### 🌙 **User Experience**
+- **Dark/Light Mode** - Toggle tema sesuai preferensi
+- **Responsive Design** - Perfect di desktop dan mobile
+- **Real-time Updates** - Data tersinkronisasi langsung
+- **Beautiful UI** - Modern interface dengan smooth animations
 
-### 🎯 Target Keuangan (Goals)
-- 🎪 Set target tabungan dengan deadline
-- 📊 Progress tracking dengan visual indicators
-- 💡 Smart recommendations untuk mencapai target
-- 🏆 Achievement system
-
-### 📈 Analytics & Insights
-- **🏥 Health Score**: Penilaian kesehatan keuangan
-- **📊 Weekly Trends**: Analisis tren mingguan pemasukan/pengeluaran
-- **🥧 Category Distribution**: Visualisasi distribusi pengeluaran per kategori
-- **🔮 Predictive Analysis**: Prediksi keuangan bulan depan berdasarkan historical data
-- **🔍 Expense Patterns**: Analisis pola pengeluaran harian dan bulanan
-- **🎯 Budget Analysis**: Tracking budget per kategori dengan alert system
-
-### 🎛️ Fitur Tambahan
-- 🌙 **Dark/Light Theme**: Toggle tema sesuai preferensi
-- 📱 **Responsive Design**: Optimal di desktop, tablet, dan mobile
-- 👆 **Swipe Gestures**: Navigasi mobile yang intuitif
-- ⌨️ **Keyboard Shortcuts**: Akses cepat dengan shortcut (Ctrl+1-5, Ctrl+N)
-- 🎲 **Demo Data**: Load sample data untuk testing fitur
-- 🔄 **Data Reset**: Reset semua data dengan konfirmasi
-- 💾 **Auto Save**: Data tersimpan otomatis ke localStorage
+### 🔐 **Authentication & Security**
+- **Supabase Auth** - Login/register yang secure
+- **Row Level Security** - Data protection per user
+- **Email Verification** - Account confirmation system
+- **Session Management** - Automatic auth state handling
 
 ## 🖼️ Demo & Screenshot
 
-### Dashboard Utama
+### Dashboard Cards
 ```
 ┌─────────────────────────────────────────────────┐
 │ 💰 Total Saldo    📈 Pemasukan    💸 Pengeluaran │
 │ Rp 5.750.000     Rp 8.000.000    Rp 2.250.000   │
 └─────────────────────────────────────────────────┘
-
-📊 Trend Mingguan          🥧 Distribusi Kategori
 ```
 
-### Analytics Dashboard
+### Quick Actions Grid
 ```
-🏥 Kesehatan Keuangan: 85/100
-📈 Prediksi Bulan Depan:
-   💰 Pemasukan: Rp 8.200.000 (+2.5%)
-   💸 Pengeluaran: Rp 2.100.000 (-6.7%)
+┌──────────────┬──────────────┬──────────────┐
+│ 💰 Tambah    │ 💸 Tambah    │ 🏦 Tambah    │
+│ Pemasukan    │ Pengeluaran  │ Akun         │
+├──────────────┼──────────────┼──────────────┤
+│ 🎯 Tambah    │ 🎲 Data      │ 🗑️ Reset    │
+│ Target       │ Demo         │ Data         │
+└──────────────┴──────────────┴──────────────┘
 ```
 
 ## 🛠️ Teknologi
 
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
-- **Storage**: LocalStorage API
-- **Icons**: Unicode Emoji
-- **Responsive**: CSS Grid & Flexbox
-- **Animations**: CSS Transitions & Transform
-- **Charts**: Custom CSS-based visualizations
+### Frontend
+- **Vanilla JavaScript (ES6+)**: Core application logic
+- **HTML5 & CSS3**: Modern semantic markup dan styling
+- **CSS Grid & Flexbox**: Responsive layout system
+- **Local Storage API**: Offline data persistence
+
+### Backend & Database
+- **Supabase**: Backend-as-a-Service dengan PostgreSQL
+- **Row Level Security**: Data protection dan authorization
+- **Real-time subscriptions**: Live data synchronization
+- **Edge Functions**: Serverless API endpoints
+
+### DevOps & Deployment
+- **GitHub Pages**: Static hosting dengan CI/CD
+- **Progressive Web App**: Offline support dan app-like experience
+- **Performance Optimized**: Lazy loading dan code splitting
 
 ## 🚀 Instalasi
 
-### Option 1: Clone Repository
+### Option 1: GitHub Pages (Recommended)
+Langsung akses: **[https://erzambayu.github.io/BudgetKu/](https://erzambayu.github.io/BudgetKu/)**
+
+### Option 2: Local Development
 ```bash
-git clone https://github.com/Erzambayu/budget-manager.git
-cd budget-manager
+# Clone repository
+git clone https://github.com/Erzambayu/BudgetKu.git
+cd BudgetKu
+
+# Buka dengan web server (Python)
+python -m http.server 8000
+
+# Atau dengan Node.js
+npx serve .
+
+# Akses di browser
+# http://localhost:8000
 ```
 
-### Option 2: Download ZIP
-1. Download ZIP file dari [releases page](https://github.com/Erzambayu/budget-manager/releases)
-2. Extract ke folder pilihan Anda
-3. Buka `index.html` di browser
+### Option 3: Cloud Setup dengan Supabase
+1. **Setup Supabase Project** (Opsional untuk cloud sync)
+   - Buat account di [Supabase](https://supabase.com/)
+   - Create new project
+   - Copy SQL schema dari [README_SUPABASE.md](./README_SUPABASE.md)
+   - Update `js/SupabaseConfig.js` dengan credentials Anda
 
-### Option 3: GitHub Pages
-Akses langsung di: [https://erzambayu.github.io/budget-manager](https://erzambayu.github.io/budget-manager)
+2. **Deploy ke hosting favorit**
+   - Vercel, Netlify, GitHub Pages, atau hosting lainnya
+   - Upload semua files atau connect dengan Git repository
 
 ## 📖 Penggunaan
 
-### 1. **Setup Awal**
-```javascript
-// Buka aplikasi di browser
-// Data akan tersimpan otomatis di localStorage
-```
+### Mode Demo (Tanpa Registrasi)
+1. Buka aplikasi
+2. Klik "**Coba Demo**" di halaman login
+3. Explore semua fitur dengan data sample
+4. Data tersimpan di localStorage browser
 
-### 2. **Tambah Akun Pertama**
-- Klik tombol "🏦 Tambah Akun"
-- Pilih jenis akun (Bank/E-Wallet/Cash/Investasi)
-- Input nama dan saldo awal
+### Mode Cloud (Dengan Supabase)
+1. **Daftar** akun baru atau **Masuk** dengan akun existing
+2. **Setup Akun** pertama (Bank/E-Wallet/Cash)
+3. **Tambah Transaksi** pemasukan dan pengeluaran
+4. **Set Target** keuangan dan track progress
+5. **Analisis** data dengan berbagai tools yang tersedia
 
-### 3. **Catat Transaksi**
-- Gunakan tombol "💰 Tambah Pemasukan" atau "💸 Tambah Pengeluaran"
-- Pilih kategori dan akun
-- Tambahkan deskripsi (opsional)
-
-### 4. **Set Target**
-- Buka halaman "🎯 Target"
-- Tambah target baru dengan nominal dan deadline
-- Track progress secara real-time
-
-### 5. **Analisis Keuangan**
-- Buka halaman "📈 Analisis"
-- Explore berbagai mode: Overview, Patterns, Predictions, Budget
-- Gunakan insights untuk optimasi keuangan
-
-### 6. **Demo Data (Testing)**
-- Klik "🎲 Data Demo" untuk load sample data
-- Explore semua fitur dengan data realistic
-- Reset dengan "🗑️ Reset Data" jika diperlukan
+### 🎯 Quick Actions
+- **Ctrl+1**: Dashboard
+- **Ctrl+2**: Transaksi
+- **Ctrl+3**: Akun
+- **Ctrl+4**: Target
+- **Ctrl+5**: Analisis
+- **Ctrl+N**: Tambah Transaksi Baru
 
 ## 📁 Struktur Project
 
 ```
-budget-manager/
-├── 📄 index.html          # Main HTML file
-├── 💄 styles.css          # Styling (jika terpisah)
-├── 🧠 app.js              # Main application logic
-├── 📖 README.md           # Documentation
-├── 📜 LICENSE             # MIT License
-└── 🖼️ assets/             # Assets folder (jika ada)
-    ├── 🎨 icons/          # Custom icons
-    └── 📸 screenshots/    # App screenshots
+BudgetKu/
+├── 📄 index.html              # Main application entry
+├── 🎨 styles.css              # Global styles dan UI components
+├── 📁 js/                     # JavaScript modules
+│   ├── 🧠 BudgetManager.js    # Core data management (localStorage)
+│   ├── ☁️ SupabaseBudgetManager.js # Supabase integration
+│   ├── 🔧 SupabaseConfig.js   # Database configuration
+│   ├── 🎨 UI.js               # Modern UI controller
+│   ├── 🔐 AuthUI.js           # Authentication interface
+│   ├── 📊 Analytics.js        # Data analysis engine
+│   └── 🧩 UIComponents.js     # Reusable UI components
+├── 📖 README.md               # Documentation utama
+├── 📚 README_SUPABASE.md      # Supabase setup guide
+└── 📜 LICENSE                 # MIT License
 ```
-
-### Key Components:
-- **BudgetManager Class**: Core data management
-- **ModernBudgetUI Class**: UI rendering dan event handling
-- **LocalStorage Integration**: Data persistence
-- **Responsive Layout**: Mobile-first design
-- **Analytics Engine**: Predictive analysis
 
 ## 🤝 Kontribusi
 
-Kontribusi sangat diterima! Berikut cara berkontribusi:
+Kontribusi sangat diterima! Lihat [CONTRIBUTING.md](./CONTRIBUTING.md) untuk guidelines.
 
-### 1. Fork Repository
+### Development Setup
 ```bash
-git fork https://github.com/Erzambayu/budget-manager.git
-```
+# Fork repository
+git fork https://github.com/Erzambayu/BudgetKu.git
 
-### 2. Create Feature Branch
-```bash
+# Create feature branch
 git checkout -b feature/AmazingFeature
-```
 
-### 3. Commit Changes
-```bash
+# Commit changes
 git commit -m 'Add some AmazingFeature'
-```
 
-### 4. Push & Pull Request
-```bash
+# Push and create PR
 git push origin feature/AmazingFeature
 ```
 
-### Guidelines:
-- 🐛 **Bug Reports**: Gunakan template issue
-- 💡 **Feature Requests**: Jelaskan use case dan benefit
-- 📝 **Code Style**: Ikuti existing code patterns
-- ✅ **Testing**: Test di multiple browsers dan devices
-
 ## 🗺️ Roadmap
 
-### 🚧 Dalam Pengembangan
-- [ ] 📊 Export data ke PDF/Excel
-- [ ] 🔐 Cloud sync dengan authentication
-- [ ] 💰 Multi-currency support
-- [ ] 📅 Recurring transactions
-- [ ] 🤖 Advanced AI recommendations
+### ✅ Completed
+- ✅ Modern UI dengan cards dan responsive design
+- ✅ Supabase integration dengan real-time sync
+- ✅ Authentication dengan email/password
+- ✅ Multi-device support dan cloud storage
+- ✅ Advanced analytics dan reporting
 
-### 💭 Ideas untuk Future
-- [ ] 📈 Investment portfolio tracking
-- [ ] 🏪 Expense OCR dari foto receipt
-- [ ] 📊 Advanced charting dengan Chart.js
-- [ ] 🔔 Push notifications
-- [ ] 👥 Family/shared budgets
-- [ ] 🏦 Bank API integration
+### 🚧 In Progress
+- 🚧 Export data ke PDF/Excel
+- 🚧 Multi-currency support
+- 🚧 Recurring transactions
+- 🚧 Advanced AI recommendations
 
-## 📄 Lisensi
+### 💭 Future Plans
+- 💭 Mobile app dengan React Native
+- 💭 Investment portfolio tracking
+- 💭 OCR untuk receipt scanning
+- 💭 Bank API integration
+- 💭 Family/shared budgets
+
+## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ```
-MIT License
-
-Copyright (c) 2024 Erzambayu
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License - feel free to use this project for personal or commercial purposes.
 ```
 
 ## 📞 Kontak
 
 **Erzambayu** - [@Erzambayu](https://github.com/Erzambayu)
 
-Project Link: [https://github.com/Erzambayu/budget-manager](https://github.com/Erzambayu/budget-manager)
+Project Link: **[https://github.com/Erzambayu/BudgetKu](https://github.com/Erzambayu/BudgetKu)**
+
+Live Demo: **[https://erzambayu.github.io/BudgetKu/](https://erzambayu.github.io/BudgetKu/)**
 
 ---
 
-<div align="center">
+**⭐ Jika project ini bermanfaat, jangan lupa kasih star ya! ⭐**
 
-**⭐ Jika project ini membantu, jangan lupa kasih star ya! ⭐**
-
-Made with ❤️ by [Erzambayu](https://github.com/Erzambayu)
-
-</div> 
+Made with ❤️ by [Erzambayu](https://github.com/Erzambayu) 

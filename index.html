@@ -1,0 +1,543 @@
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BudgetKu - Smart Financial Management</title>
+    <meta name="description" content="Kelola keuangan Anda dengan mudah dan aman menggunakan BudgetKu" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>B</text></svg>"
+    />
+
+    <!-- Additional CSS for button fixes -->
+    <style>
+      /* Ensure action buttons are always clickable */
+      .action-btn-small {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 100 !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 6px 8px !important;
+        margin: 0 2px !important;
+        font-size: 12px !important;
+        line-height: 1 !important;
+        display: inline-block !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        transition: all 0.2s ease !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+      }
+
+      .action-btn-small.edit {
+        background: #f59e0b !important;
+        color: white !important;
+      }
+
+      .action-btn-small.edit:hover {
+        background: #d97706 !important;
+        transform: scale(1.05) !important;
+      }
+
+      .action-btn-small.delete {
+        background: #ef4444 !important;
+        color: white !important;
+      }
+
+      .action-btn-small.delete:hover {
+        background: #dc2626 !important;
+        transform: scale(1.05) !important;
+      }
+
+      /* Ensure transaction actions container doesn't interfere */
+      .transaction-actions {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+        position: relative !important;
+        z-index: 50 !important;
+      }
+
+      .account-actions {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+        position: relative !important;
+        z-index: 50 !important;
+      }
+
+      .goal-actions {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+        position: relative !important;
+        z-index: 50 !important;
+      }
+
+      /* Prevent parent containers from blocking clicks */
+      .transaction-item,
+      .account-card,
+      .goal-card {
+        position: relative !important;
+      }
+
+      .transaction-item *,
+      .account-card *,
+      .goal-card * {
+        pointer-events: auto !important;
+      }
+
+      /* Debug styling to make buttons more visible */
+      .action-btn-small {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 768px) {
+        .action-btn-small {
+          min-width: 32px !important;
+          min-height: 32px !important;
+          padding: 8px !important;
+          font-size: 14px !important;
+        }
+      }
+
+      /* ===== MODAL FIX ===== */
+
+      /* Force modal container to be properly positioned and visible when active */
+      .modal-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 99999 !important;
+        display: none !important; /* Hide by default */
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(4px) !important;
+      }
+
+      /* Show modal container when active */
+      .modal-container.active,
+      .modal-container[style*="flex"] {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+      /* Modal content positioning */
+      .modal-content {
+        position: relative !important;
+        background: white !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        max-width: 500px !important;
+        width: 90% !important;
+        max-height: 80vh !important;
+        overflow: hidden !important;
+        z-index: 100000 !important;
+      }
+
+      /* Modal overlay click handling */
+      .modal-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 99999 !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(4px) !important;
+      }
+
+      .modal-overlay.active {
+        display: flex !important;
+      }
+
+      .modal-backdrop {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: transparent !important;
+        cursor: pointer !important;
+      }
+
+      /* Ensure modal form is scrollable */
+      .modal-form {
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+        padding: 20px !important;
+      }
+
+      /* Make sure modal buttons are always clickable */
+      .modal-close {
+        background: #f3f4f6 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 32px !important;
+        height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        color: #6b7280 !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        z-index: 100001 !important;
+        position: relative !important;
+      }
+
+      .modal-close:hover {
+        background: #e5e7eb !important;
+        color: #374151 !important;
+      }
+
+      /* Debug: add visible border to modal container when active */
+      /*.modal-container.active {
+            border: 2px solid red !important;
+        }*/
+
+      /* Make form inputs more visible */
+      .form-input,
+      .form-select {
+        border: 2px solid #d1d5db !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        font-size: 14px !important;
+        background: white !important;
+        color: #1f2937 !important; /* Force dark text */
+      }
+
+      .form-input:focus,
+      .form-select:focus {
+        border-color: #3b82f6 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+      }
+
+      /* Modal text styling - force visibility */
+      .modal {
+        color: #1f2937 !important; /* Force dark text for light modal background */
+      }
+
+      .modal-title {
+        color: #111827 !important; /* Darker title */
+        font-weight: 700 !important;
+      }
+
+      .form-label {
+        color: #374151 !important; /* Dark gray for labels */
+        font-weight: 600 !important;
+      }
+
+      .form-help {
+        color: #6b7280 !important; /* Medium gray for help text */
+      }
+
+      /* Dark theme modal adjustments */
+      .dark-theme .modal {
+        background: #1f2937 !important; /* Dark background in dark mode */
+        color: #f9fafb !important; /* Light text in dark mode */
+        border: 1px solid #374151 !important;
+      }
+
+      .dark-theme .modal-title {
+        color: #f9fafb !important;
+      }
+
+      .dark-theme .form-label {
+        color: #e5e7eb !important;
+      }
+
+      .dark-theme .form-input,
+      .dark-theme .form-select {
+        background: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+      }
+
+      .dark-theme .form-input:focus,
+      .dark-theme .form-select:focus {
+        border-color: #60a5fa !important;
+        background: #374151 !important;
+      }
+
+      .dark-theme .form-help {
+        color: #9ca3af !important;
+      }
+
+      .dark-theme .modal-backdrop {
+        background: rgba(0, 0, 0, 0.7) !important;
+      }
+
+      /* Theme toggle button styling */
+      .theme-toggle {
+        background: none !important;
+        border: none !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        padding: 8px !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+      }
+
+      .theme-toggle:hover {
+        background: rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .dark-theme .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div class="loading-overlay active" id="loading-overlay">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">Memuat BudgetKu...</div>
+      </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+      <!-- Initial content will be replaced by AuthUI or main app -->
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          flex-direction: column;
+          gap: 20px;
+        "
+      >
+        <div style="font-size: 4rem">B</div>
+        <h1 style="margin: 0; color: #374151">BudgetKu</h1>
+        <p style="margin: 0; color: #6b7280">Memuat aplikasi...</p>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer" class="modal-container"></div>
+
+    <!-- Scripts -->
+
+    <!-- Core Dependencies -->
+    <script src="js/SupabaseConfig.js"></script>
+
+    <!-- Core Budget Manager -->
+    <script src="js/BudgetManager.js"></script>
+    <script src="js/SupabaseBudgetManager.js"></script>
+
+    <!-- Analytics Engine -->
+    <script src="js/Analytics.js"></script>
+
+    <!-- UI Components -->
+    <script src="js/UIComponents.js"></script>
+
+    <!-- Main UI Controller -->
+    <script src="js/UI.js"></script>
+
+    <!-- Auth UI -->
+    <script src="js/AuthUI.js"></script>
+
+    <!-- App Initialization -->
+    <script>
+      // Global app initialization
+      document.addEventListener("DOMContentLoaded", async function () {
+        console.log("BudgetKu App Starting...");
+
+        try {
+          // Show loading
+          const loadingOverlay = document.getElementById("loading-overlay");
+
+          // Initialize core managers
+          console.log("Initializing core managers...");
+          window.budgetManager = new BudgetManager();
+          window.analytics = new Analytics(window.budgetManager);
+          window.components = new UIComponents(window.budgetManager, window.analytics);
+
+          // Initialize Supabase Budget Manager
+          console.log("Initializing Supabase integration...");
+          if (window.supabaseBudgetManager) {
+            await window.supabaseBudgetManager.initialize();
+          }
+
+          // Initialize Auth UI first (this will handle showing the auth screen or main app)
+          console.log("Initializing Auth UI...");
+          if (window.authUI) {
+          await window.authUI.initialize();
+          }
+
+          // Create a simple UI class for compatibility
+          class SimpleUI {
+            constructor() {
+              this.budgetManager = window.budgetManager;
+              this.currentPage = "dashboard";
+              this.modernUI = null;
+              this.components = null;
+            }
+
+            async initialize() {
+              console.log("Simple UI initialized");
+
+              // Initialize components
+              try {
+                this.components =
+                  window.components || new UIComponents(this.budgetManager, new Analytics(this.budgetManager));
+                console.log("UI Components initialized");
+              } catch (error) {
+                console.warn("Failed to initialize UI Components:", error);
+              }
+
+              // Initialize ModernBudgetUI immediately
+              try {
+                console.log("Initializing ModernBudgetUI...");
+                this.modernUI = new ModernBudgetUI(this.budgetManager);
+                await this.modernUI.initialize();
+
+                // Set global reference
+                window.modernUI = this.modernUI;
+
+                // Initialize theme after ModernBudgetUI is ready
+                if (this.modernUI.initializeTheme) {
+                  this.modernUI.initializeTheme();
+                  console.log("Theme initialized");
+                }
+
+                console.log("ModernBudgetUI initialized successfully");
+              } catch (error) {
+                console.error("Failed to initialize ModernBudgetUI:", error);
+              }
+
+              return true;
+            }
+          }
+
+          // Initialize SimpleUI
+          window.ui = new SimpleUI();
+          await window.ui.initialize();
+
+          // Add global functions
+          window.showQuickAddModal = function (type) {
+            try {
+              console.log("Showing quick add modal for:", type);
+              const component = window.ui?.components || window.modernUI?.components;
+              if (component && component.showQuickAddModal) {
+                component.showQuickAddModal(type);
+              } else {
+                throw new Error("UI Components not available");
+              }
+            } catch (error) {
+              console.error("Error in showQuickAddModal:", error);
+              alert(
+                "Tidak dapat membuka modal " +
+                  (type === "income" ? "pemasukan" : "pengeluaran") +
+                  ".\n\nError: " +
+                  error.message +
+                  "\n\nSilakan refresh halaman dan coba lagi."
+              );
+            }
+          };
+
+          window.hideModal = function () {
+            try {
+                const modalContainer = document.getElementById("modalContainer");
+                if (modalContainer) {
+                  modalContainer.style.display = "none";
+                modalContainer.classList.remove("active");
+              }
+            } catch (error) {
+              console.error("Error hiding modal:", error);
+            }
+          };
+
+          window.showAddAccountModal = function () {
+            try {
+              const component = window.ui?.components || window.modernUI?.components;
+              if (component && component.showAddAccountModal) {
+                component.showAddAccountModal();
+              } else {
+                throw new Error("UI Components not available");
+              }
+            } catch (error) {
+              console.error("Error in showAddAccountModal:", error);
+              alert(
+                "Tidak dapat membuka modal tambah akun.\n\nError: " +
+                  error.message +
+                  "\n\nSilakan refresh halaman dan coba lagi."
+              );
+            }
+          };
+
+          window.showAddGoalModal = function () {
+            try {
+              const component = window.ui?.components || window.modernUI?.components;
+              if (component && component.showAddGoalModal) {
+                component.showAddGoalModal();
+              } else {
+                throw new Error("UI Components not available");
+              }
+            } catch (error) {
+              console.error("Error in showAddGoalModal:", error);
+              alert(
+                "Tidak dapat membuka modal tambah target.\n\nError: " +
+                  error.message +
+                  "\n\nSilakan refresh halaman dan coba lagi."
+              );
+            }
+          };
+
+          // Hide loading overlay
+            if (loadingOverlay) {
+              loadingOverlay.classList.remove("active");
+            }
+
+          console.log("BudgetKu App Started Successfully");
+        } catch (error) {
+          console.error("Failed to start BudgetKu:", error);
+          alert("Gagal memulai aplikasi: " + error.message);
+        }
+      });
+    </script>
+
+    <!-- Analytics (optional) -->
+    <script>
+      // Google Analytics atau analytics lainnya bisa ditambahkan di sini
+      // gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+  </body>
+</html>
