@@ -1,408 +1,416 @@
 // ===== MAIN UI CLASS =====
 class ModernBudgetUI {
-    constructor(budgetManager = null) {
-        this.budgetManager = budgetManager || new BudgetManager();
-        this.analytics = new Analytics(this.budgetManager);
-        this.components = new UIComponents(this.budgetManager, this.analytics);
-        this.currentView = 'dashboard';
-        this.isTransitioning = false;
-        this.analyticsMode = 'overview'; // overview, patterns, predictions, budget
-        this.initialized = false;
+  constructor(budgetManager = null) {
+    this.budgetManager = budgetManager || new BudgetManager();
+    this.analytics = new Analytics(this.budgetManager);
+    this.components = new UIComponents(this.budgetManager, this.analytics);
+    this.currentView = "dashboard";
+    this.isTransitioning = false;
+    this.analyticsMode = "overview"; // overview, patterns, predictions, budget
+    this.initialized = false;
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+
+    this.bindEvents();
+    this.initializeTheme();
+    this.preloadData();
+    this.initialized = true;
+    console.log("✅ ModernBudgetUI initialized");
+  }
+
+  init() {
+    this.createLayout();
+    this.initialize();
+    this.render();
+  }
+
+  // Method for compatibility with SimpleUI
+  renderPage(page) {
+    if (!this.initialized) {
+      console.warn("⚠️ ModernBudgetUI not initialized yet");
+      return;
     }
 
-    async initialize() {
-        if (this.initialized) return;
-        
-        this.bindEvents();
-        this.initializeTheme();
-        this.preloadData();
-        this.initialized = true;
-        console.log('✅ ModernBudgetUI initialized');
+    this.smoothSwitchView(page);
+  }
+
+  createLayout() {
+    // Use existing app container instead of creating new one
+    const appContainer = document.querySelector(".app-container");
+    if (!appContainer) {
+      console.error("❌ App container not found");
+      return;
     }
 
-    init() {
-        this.createLayout();
-        this.initialize();
-        this.render();
-    }
-
-    // Method for compatibility with SimpleUI
-    renderPage(page) {
-        if (!this.initialized) {
-            console.warn('⚠️ ModernBudgetUI not initialized yet');
-            return;
-        }
-        
-        this.smoothSwitchView(page);
-    }
-
-    createLayout() {
-        // Use existing app container instead of creating new one
-        const appContainer = document.querySelector('.app-container');
-        if (!appContainer) {
-            console.error('❌ App container not found');
-            return;
-        }
-
-        // Only replace content area, keep existing structure
-        const contentArea = document.getElementById('content-area');
-        if (contentArea) {
-            // We'll render into the existing content area
-            contentArea.innerHTML = `
+    // Only replace content area, keep existing structure
+    const contentArea = document.getElementById("content-area");
+    if (contentArea) {
+      // We'll render into the existing content area
+      contentArea.innerHTML = `
                 <!-- Content will be injected here by render methods -->
             `;
-        }
-
-        // Add missing elements if needed
-        if (!document.getElementById('modalContainer')) {
-            const modalContainer = document.createElement('div');
-            modalContainer.className = 'modal-container';
-            modalContainer.id = 'modalContainer';
-            document.body.appendChild(modalContainer);
-        }
-
-        if (!document.getElementById('toastContainer')) {
-            const toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container';
-            toastContainer.id = 'toastContainer';
-            document.body.appendChild(toastContainer);
-        }
     }
 
-    // ===== EVENT HANDLING =====
-    bindEvents() {
-        // Navigation events - Use existing nav elements
-        document.addEventListener('click', (e) => {
-            // Handle navigation clicks
-            if (e.target.closest('.nav-item')) {
-                e.preventDefault();
-                const viewName = e.target.closest('.nav-item').dataset.page;
-                if (viewName) {
-                    this.smoothSwitchView(viewName);
-                }
+    // Add missing elements if needed
+    if (!document.getElementById("modalContainer")) {
+      const modalContainer = document.createElement("div");
+      modalContainer.className = "modal-container";
+      modalContainer.id = "modalContainer";
+      document.body.appendChild(modalContainer);
+    }
+
+    if (!document.getElementById("toastContainer")) {
+      const toastContainer = document.createElement("div");
+      toastContainer.className = "toast-container";
+      toastContainer.id = "toastContainer";
+      document.body.appendChild(toastContainer);
+    }
+  }
+
+  // ===== EVENT HANDLING =====
+  bindEvents() {
+    // Navigation events - Use existing nav elements
+    document.addEventListener("click", (e) => {
+      // Handle navigation clicks
+      if (e.target.closest(".nav-item")) {
+        e.preventDefault();
+        const viewName = e.target.closest(".nav-item").dataset.page;
+        if (viewName) {
+          this.smoothSwitchView(viewName);
+        }
+      }
+
+      // Handle bottom nav clicks
+      if (e.target.closest(".bottom-nav-item")) {
+        e.preventDefault();
+        const viewName = e.target.closest(".bottom-nav-item").dataset.page;
+        if (viewName) {
+          this.smoothSwitchView(viewName);
+        }
+      }
+    });
+
+    // Theme toggle
+    const themeToggle = document.getElementById("themeToggle");
+    if (themeToggle) {
+      themeToggle.addEventListener("click", () => this.toggleTheme());
+    }
+
+    // Mobile menu toggle
+    const mobileMenuToggle = document.querySelector(".mobile-menu-toggle");
+    if (mobileMenuToggle) {
+      mobileMenuToggle.addEventListener("click", () => this.toggleMobileSidebar());
+    }
+
+    // Sidebar overlay
+    const sidebarOverlay = document.querySelector(".sidebar-overlay");
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener("click", () => this.closeMobileSidebar());
+    }
+
+    // Window resize
+    window.addEventListener("resize", () => this.handleResize());
+
+    // Initialize other event handlers
+    this.initSwipeGestures();
+    this.initKeyboardShortcuts();
+
+    console.log("✅ Event handlers bound to existing elements");
+  }
+
+  initSwipeGestures() {
+    let startX = 0;
+    let startY = 0;
+    let isIPhone = /iPhone/.test(navigator.userAgent);
+
+    document.addEventListener(
+      "touchstart",
+      (e) => {
+        if (isIPhone) {
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        }
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "touchend",
+      (e) => {
+        if (isIPhone && e.changedTouches.length > 0) {
+          const endX = e.changedTouches[0].clientX;
+          const endY = e.changedTouches[0].clientY;
+          const deltaX = endX - startX;
+          const deltaY = endY - startY;
+
+          // Horizontal swipes for navigation
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
+              this.handleSwipeNavigation("right");
+            } else {
+              this.handleSwipeNavigation("left");
             }
-            
-            // Handle bottom nav clicks
-            if (e.target.closest('.bottom-nav-item')) {
-                e.preventDefault();
-                const viewName = e.target.closest('.bottom-nav-item').dataset.page;
-                if (viewName) {
-                    this.smoothSwitchView(viewName);
-                }
-            }
-        });
-
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => this.toggleTheme());
+          }
         }
+      },
+      { passive: true }
+    );
+  }
 
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => this.toggleMobileSidebar());
+  initKeyboardShortcuts() {
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key;
+        switch (key) {
+          case "1":
+            e.preventDefault();
+            this.smoothSwitchView("dashboard");
+            break;
+          case "2":
+            e.preventDefault();
+            this.smoothSwitchView("transactions");
+            break;
+          case "3":
+            e.preventDefault();
+            this.smoothSwitchView("accounts");
+            break;
+          case "4":
+            e.preventDefault();
+            this.smoothSwitchView("goals");
+            break;
+          case "5":
+            e.preventDefault();
+            this.smoothSwitchView("analytics");
+            break;
+          case "n":
+            e.preventDefault();
+            window.showQuickAddModal("expense");
+            break;
         }
+      }
+    });
+  }
 
-        // Sidebar overlay
-        const sidebarOverlay = document.querySelector('.sidebar-overlay');
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', () => this.closeMobileSidebar());
-        }
+  handleSwipeNavigation(direction) {
+    const views = ["dashboard", "transactions", "accounts", "goals", "analytics"];
+    const currentIndex = views.indexOf(this.currentView);
 
-        // Window resize
-        window.addEventListener('resize', () => this.handleResize());
-        
-        // Initialize other event handlers
-        this.initSwipeGestures();
-        this.initKeyboardShortcuts();
-        
-        console.log('✅ Event handlers bound to existing elements');
+    let newIndex;
+    if (direction === "left" && currentIndex < views.length - 1) {
+      newIndex = currentIndex + 1;
+    } else if (direction === "right" && currentIndex > 0) {
+      newIndex = currentIndex - 1;
     }
 
-    initSwipeGestures() {
-        let startX = 0;
-        let startY = 0;
-        let isIPhone = /iPhone/.test(navigator.userAgent);
+    if (newIndex !== undefined) {
+      this.smoothSwitchView(views[newIndex]);
+    }
+  }
 
-        document.addEventListener('touchstart', (e) => {
-            if (isIPhone) {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
-        }, { passive: true });
+  // ===== NAVIGATION =====
+  smoothSwitchView(view) {
+    if (this.isTransitioning || view === this.currentView) return;
 
-        document.addEventListener('touchend', (e) => {
-            if (isIPhone && e.changedTouches.length > 0) {
-                const endX = e.changedTouches[0].clientX;
-                const endY = e.changedTouches[0].clientY;
-                const deltaX = endX - startX;
-                const deltaY = endY - startY;
+    this.isTransitioning = true;
+    const contentArea = document.getElementById("content-area");
 
-                // Horizontal swipes for navigation
-                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-                    if (deltaX > 0) {
-                        this.handleSwipeNavigation('right');
-                    } else {
-                        this.handleSwipeNavigation('left');
-                    }
-                }
-            }
-        }, { passive: true });
+    if (contentArea) {
+      contentArea.style.opacity = "0.5";
+      contentArea.style.transform = "translateY(10px)";
     }
 
-    initKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                const key = e.key;
-                switch(key) {
-                    case '1':
-                        e.preventDefault();
-                        this.smoothSwitchView('dashboard');
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        this.smoothSwitchView('transactions');
-                        break;
-                    case '3':
-                        e.preventDefault();
-                        this.smoothSwitchView('accounts');
-                        break;
-                    case '4':
-                        e.preventDefault();
-                        this.smoothSwitchView('goals');
-                        break;
-                    case '5':
-                        e.preventDefault();
-                        this.smoothSwitchView('analytics');
-                        break;
-                    case 'n':
-                        e.preventDefault();
-                        window.showQuickAddModal('expense');
-                        break;
-                }
-            }
-        });
+    setTimeout(() => {
+      this.currentView = view;
+      this.updateNavigationStates(view);
+      this.updatePageHeader(view);
+      this.render();
+
+      if (contentArea) {
+        contentArea.style.opacity = "1";
+        contentArea.style.transform = "translateY(0)";
+      }
+
+      this.isTransitioning = false;
+    }, 200);
+  }
+
+  updateNavigationStates(view) {
+    // Update sidebar navigation
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.classList.toggle("active", item.dataset.page === view);
+    });
+
+    // Update bottom navigation
+    document.querySelectorAll(".bottom-nav-item").forEach((item) => {
+      item.classList.toggle("active", item.dataset.page === view);
+    });
+  }
+
+  updatePageHeader(view) {
+    const pageTitle = document.querySelector(".page-title");
+    const breadcrumb = document.querySelector(".breadcrumb-item");
+
+    const titles = {
+      dashboard: "Dashboard",
+      transactions: "Transaksi",
+      accounts: "Akun",
+      goals: "Target",
+      analytics: "Analisis",
+    };
+
+    if (pageTitle && breadcrumb) {
+      pageTitle.textContent = titles[view] || "Dashboard";
+      breadcrumb.textContent = titles[view] || "Dashboard";
+    }
+  }
+
+  // ===== THEME MANAGEMENT =====
+  initializeTheme() {
+    const savedTheme = localStorage.getItem("budgetTheme") || "light";
+    this.setTheme(savedTheme);
+  }
+
+  toggleTheme() {
+    const currentTheme = document.body.classList.contains("dark-theme") ? "dark" : "light";
+    const newTheme = currentTheme === "light" ? "dark" : "light";
+    this.setTheme(newTheme);
+  }
+
+  setTheme(theme) {
+    if (theme === "dark") {
+      document.body.classList.add("dark-theme");
+      document.querySelectorAll(".theme-toggle").forEach((btn) => {
+        btn.textContent = "☀️";
+      });
+    } else {
+      document.body.classList.remove("dark-theme");
+      document.querySelectorAll(".theme-toggle").forEach((btn) => {
+        btn.textContent = "🌙";
+      });
+    }
+    localStorage.setItem("budgetTheme", theme);
+  }
+
+  // ===== MOBILE SIDEBAR =====
+  toggleMobileSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.querySelector(".sidebar-overlay");
+
+    if (!sidebar || !overlay) {
+      console.warn("⚠️ Sidebar elements not found");
+      return;
     }
 
-    handleSwipeNavigation(direction) {
-        const views = ['dashboard', 'transactions', 'accounts', 'goals', 'analytics'];
-        const currentIndex = views.indexOf(this.currentView);
-        
-        let newIndex;
-        if (direction === 'left' && currentIndex < views.length - 1) {
-            newIndex = currentIndex + 1;
-        } else if (direction === 'right' && currentIndex > 0) {
-            newIndex = currentIndex - 1;
-        }
-        
-        if (newIndex !== undefined) {
-            this.smoothSwitchView(views[newIndex]);
-        }
+    if (sidebar.classList.contains("open")) {
+      this.closeMobileSidebar();
+    } else {
+      this.openMobileSidebar();
+    }
+  }
+
+  openMobileSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.querySelector(".sidebar-overlay");
+
+    if (sidebar && overlay) {
+      sidebar.classList.add("open");
+      overlay.classList.add("active");
+    }
+  }
+
+  closeMobileSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.querySelector(".sidebar-overlay");
+
+    if (sidebar && overlay) {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+  }
+
+  // ===== LOADING STATES =====
+  showLoadingOverlay() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) {
+      overlay.classList.add("active");
+    }
+  }
+
+  hideLoadingOverlay() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+    }
+  }
+
+  // ===== DATA PRELOADING =====
+  preloadData() {
+    // Initialize demo data if needed
+    if (this.budgetManager.data.accounts.length === 0) {
+      console.log("📝 No data found, ready for demo data or manual entry");
+    }
+  }
+
+  // ===== RENDER METHODS =====
+  render() {
+    if (!this.currentView) {
+      this.currentView = "dashboard";
     }
 
-    // ===== NAVIGATION =====
-    smoothSwitchView(view) {
-        if (this.isTransitioning || view === this.currentView) return;
-        
-        this.isTransitioning = true;
-        const contentArea = document.getElementById('content-area');
-        
-        if (contentArea) {
-            contentArea.style.opacity = '0.5';
-            contentArea.style.transform = 'translateY(10px)';
-        }
-        
-        setTimeout(() => {
-            this.currentView = view;
-            this.updateNavigationStates(view);
-            this.updatePageHeader(view);
-            this.render();
-            
-            if (contentArea) {
-                contentArea.style.opacity = '1';
-                contentArea.style.transform = 'translateY(0)';
-            }
-            
-            this.isTransitioning = false;
-        }, 200);
+    const contentArea = document.getElementById("content-area");
+    if (!contentArea) {
+      console.error("❌ Content area not found");
+      return;
     }
 
-    updateNavigationStates(view) {
-        // Update sidebar navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === view);
-        });
-        
-        // Update bottom navigation
-        document.querySelectorAll('.bottom-nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === view);
-        });
+    let content = "";
+
+    switch (this.currentView) {
+      case "dashboard":
+        content = this.renderDashboard();
+        break;
+      case "transactions":
+        content = this.renderTransactions();
+        break;
+      case "accounts":
+        content = this.renderAccounts();
+        break;
+      case "goals":
+        content = this.renderGoals();
+        break;
+      case "analytics":
+        content = this.renderAdvancedAnalytics();
+        break;
+      default:
+        content = this.renderDashboard();
     }
 
-    updatePageHeader(view) {
-        const pageTitle = document.querySelector('.page-title');
-        const breadcrumb = document.querySelector('.breadcrumb-item');
-        
-        const titles = {
-            dashboard: 'Dashboard',
-            transactions: 'Transaksi',
-            accounts: 'Akun',
-            goals: 'Target',
-            analytics: 'Analisis'
-        };
-        
-        if (pageTitle && breadcrumb) {
-            pageTitle.textContent = titles[view] || 'Dashboard';
-            breadcrumb.textContent = titles[view] || 'Dashboard';
-        }
-    }
+    contentArea.innerHTML = content;
+    this.initializePageSpecific();
+    this.updateUserBalance();
+  }
 
-    // ===== THEME MANAGEMENT =====
-    initializeTheme() {
-        const savedTheme = localStorage.getItem('budgetTheme') || 'light';
-        this.setTheme(savedTheme);
-    }
+  // ===== DASHBOARD RENDERING =====
+  renderDashboard() {
+    console.log("🎯 renderDashboard called");
+    console.log("Budget manager:", this.budgetManager);
+    console.log("Analytics:", this.analytics);
 
-    toggleTheme() {
-        const currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        this.setTheme(newTheme);
-    }
+    const stats = this.analytics.getMonthlyStats();
+    console.log("Monthly stats:", stats);
 
-    setTheme(theme) {
-        if (theme === 'dark') {
-            document.body.classList.add('dark-theme');
-            document.querySelectorAll('.theme-toggle').forEach(btn => {
-                btn.textContent = '☀️';
-            });
-        } else {
-            document.body.classList.remove('dark-theme');
-            document.querySelectorAll('.theme-toggle').forEach(btn => {
-                btn.textContent = '🌙';
-            });
-        }
-        localStorage.setItem('budgetTheme', theme);
-    }
+    const totalBalance = this.budgetManager.getTotalBalance();
+    console.log("Total balance:", totalBalance);
 
-    // ===== MOBILE SIDEBAR =====
-    toggleMobileSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-        
-        if (!sidebar || !overlay) {
-            console.warn('⚠️ Sidebar elements not found');
-            return;
-        }
-        
-        if (sidebar.classList.contains('open')) {
-            this.closeMobileSidebar();
-        } else {
-            this.openMobileSidebar();
-        }
-    }
+    const recentTransactions = this.budgetManager.data.transactions
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5);
 
-    openMobileSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-        
-        if (sidebar && overlay) {
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
-        }
-    }
+    console.log("Recent transactions:", recentTransactions);
 
-    closeMobileSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-        
-        if (sidebar && overlay) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        }
-    }
-
-    // ===== LOADING STATES =====
-    showLoadingOverlay() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.classList.add('active');
-        }
-    }
-
-    hideLoadingOverlay() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
-    }
-
-    // ===== DATA PRELOADING =====
-    preloadData() {
-        // Initialize demo data if needed
-        if (this.budgetManager.data.accounts.length === 0) {
-            console.log('📝 No data found, ready for demo data or manual entry');
-        }
-    }
-
-    // ===== RENDER METHODS =====
-    render() {
-        if (!this.currentView) {
-            this.currentView = 'dashboard';
-        }
-
-        const contentArea = document.getElementById('content-area');
-        if (!contentArea) {
-            console.error('❌ Content area not found');
-            return;
-        }
-
-        let content = '';
-        
-        switch(this.currentView) {
-            case 'dashboard':
-                content = this.renderDashboard();
-                break;
-            case 'transactions':
-                content = this.renderTransactions();
-                break;
-            case 'accounts':
-                content = this.renderAccounts();
-                break;
-            case 'goals':
-                content = this.renderGoals();
-                break;
-            case 'analytics':
-                content = this.renderAdvancedAnalytics();
-                break;
-            default:
-                content = this.renderDashboard();
-        }
-
-        contentArea.innerHTML = content;
-        this.initializePageSpecific();
-        this.updateUserBalance();
-    }
-
-    // ===== DASHBOARD RENDERING =====
-    renderDashboard() {
-        console.log('🎯 renderDashboard called');
-        console.log('Budget manager:', this.budgetManager);
-        console.log('Analytics:', this.analytics);
-        
-        const stats = this.analytics.getMonthlyStats();
-        console.log('Monthly stats:', stats);
-        
-        const totalBalance = this.budgetManager.getTotalBalance();
-        console.log('Total balance:', totalBalance);
-        
-        const recentTransactions = this.budgetManager.data.transactions
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 5);
-        
-        console.log('Recent transactions:', recentTransactions);
-
-        return `
+    return `
             <div class="dashboard-container">
                 <!-- Statistics Cards -->
                 <div class="stats-grid">
@@ -430,7 +438,7 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${stats.balance >= 0 ? 'success' : 'danger'}">
+                    <div class="stat-card ${stats.balance >= 0 ? "success" : "danger"}">
                         <div class="stat-icon">💎</div>
                         <div class="stat-content">
                             <div class="stat-value">${this.budgetManager.formatCurrency(stats.balance)}</div>
@@ -484,26 +492,26 @@ class ModernBudgetUI {
                     </div>
                     
                     <div class="transaction-list">
-                        ${recentTransactions.length > 0 ? 
-                            recentTransactions.map(t => this.components.renderTransactionItem(t)).join('') :
-                            '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">Belum Ada Transaksi</div><div class="empty-description">Tambahkan transaksi pertama Anda</div></div>'
+                        ${
+                          recentTransactions.length > 0
+                            ? recentTransactions.map((t) => this.components.renderTransactionItem(t)).join("")
+                            : '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">Belum Ada Transaksi</div><div class="empty-description">Tambahkan transaksi pertama Anda</div></div>'
                         }
                     </div>
                 </div>
             </div>
         `;
-    }
+  }
 
-    // ===== TRANSACTIONS PAGE RENDERING =====
-    renderTransactions() {
-        const stats = this.analytics.getMonthlyStats();
-        const allTransactions = this.budgetManager.data.transactions
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const accounts = this.budgetManager.data.accounts;
-        const categories = this.budgetManager.data.categories;
+  // ===== TRANSACTIONS PAGE RENDERING =====
+  renderTransactions() {
+    const stats = this.analytics.getMonthlyStats();
+    const allTransactions = this.budgetManager.data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        return `
+    const accounts = this.budgetManager.data.accounts;
+    const categories = this.budgetManager.data.categories;
+
+    return `
             <div class="transactions-container">
                 <!-- Transactions Statistics -->
                 <div class="transactions-stats">
@@ -531,7 +539,7 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${stats.balance >= 0 ? 'success' : 'danger'}">
+                    <div class="stat-card ${stats.balance >= 0 ? "success" : "danger"}">
                         <div class="stat-icon">💎</div>
                         <div class="stat-content">
                             <div class="stat-value">${this.budgetManager.formatCurrency(stats.balance)}</div>
@@ -571,63 +579,70 @@ class ModernBudgetUI {
                     </div>
                     
                     <div class="transactions-list" id="transactionsList">
-                        ${allTransactions.length > 0 ? 
-                            allTransactions.map(t => this.components.renderTransactionItem(t)).join('') :
-                            '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">Belum Ada Transaksi</div><div class="empty-description">Mulai dengan menambahkan transaksi pertama Anda</div><button class="btn btn-primary" onclick="window.showQuickAddModal(\'expense\')" style="margin-top: 1rem;">Tambah Transaksi</button></div>'
+                        ${
+                          allTransactions.length > 0
+                            ? allTransactions.map((t) => this.components.renderTransactionItem(t)).join("")
+                            : '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">Belum Ada Transaksi</div><div class="empty-description">Mulai dengan menambahkan transaksi pertama Anda</div><button class="btn btn-primary" onclick="window.showQuickAddModal(\'expense\')" style="margin-top: 1rem;">Tambah Transaksi</button></div>'
                         }
                     </div>
                 </div>
             </div>
         `;
-    }
+  }
 
-    // ===== TRANSACTION ITEM RENDERING =====
-    renderDetailedTransactionItem(transaction) {
-        const category = this.budgetManager.getCategoryById(transaction.categoryId);
-        const account = this.budgetManager.getAccountById(transaction.accountId);
-        const accountType = this.budgetManager.data.accountTypes.find(t => t.id === account?.typeId);
-        
-        const date = new Date(transaction.date);
-        const formattedDate = date.toLocaleDateString('id-ID', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-        
-        const timeAgo = this.getTimeAgo(date);
-        
-        return `
+  // ===== TRANSACTION ITEM RENDERING =====
+  renderDetailedTransactionItem(transaction) {
+    const category = this.budgetManager.getCategoryById(transaction.categoryId);
+    const account = this.budgetManager.getAccountById(transaction.accountId);
+    const accountType = this.budgetManager.data.accountTypes.find((t) => t.id === account?.typeId);
+
+    const date = new Date(transaction.date);
+    const formattedDate = date.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    const timeAgo = this.getTimeAgo(date);
+
+    return `
             <div class="transaction-item detailed ${transaction.type}" data-id="${transaction.id}">
                 <div class="transaction-main">
                     <div class="transaction-icon">
-                        ${category?.icon || (transaction.type === 'income' ? '💰' : '💸')}
+                        ${category?.icon || (transaction.type === "income" ? "💰" : "💸")}
                     </div>
                     <div class="transaction-details">
                         <div class="transaction-name">
-                            ${transaction.description || category?.name || 'Transaksi'}
+                            ${transaction.description || category?.name || "Transaksi"}
                         </div>
                         <div class="transaction-meta">
                             <span>${formattedDate}</span>
                             <span class="transaction-separator">•</span>
-                            <span>${accountType?.icon || '💳'} ${account?.name || 'Unknown'}</span>
+                            <span>${accountType?.icon || "💳"} ${account?.name || "Unknown"}</span>
                             <span class="transaction-separator">•</span>
                             <span>${timeAgo}</span>
                         </div>
                     </div>
                     <div class="transaction-amount ${transaction.type}">
-                        ${transaction.type === 'income' ? '+' : '-'}${this.budgetManager.formatCurrency(transaction.amount)}
+                        ${transaction.type === "income" ? "+" : "-"}${this.budgetManager.formatCurrency(
+      transaction.amount
+    )}
                     </div>
                 </div>
                 <div class="transaction-actions">
                     <button class="action-btn-small edit" 
-                            onclick="event.stopPropagation(); console.log('Edit button clicked for transaction ${transaction.id}'); window.editTransaction(${transaction.id});" 
+                            onclick="event.stopPropagation(); console.log('Edit button clicked for transaction ${
+                              transaction.id
+                            }'); window.editTransaction(${transaction.id});" 
                             title="Edit Transaksi"
                             style="cursor: pointer; pointer-events: auto; position: relative; z-index: 10; background: #f59e0b; color: white; border: none; border-radius: 4px; padding: 6px 8px; margin: 0 2px; font-size: 12px;">
                         ✏️
                     </button>
                     <button class="action-btn-small delete" 
-                            onclick="event.stopPropagation(); console.log('Delete button clicked for transaction ${transaction.id}'); window.deleteTransaction(${transaction.id});" 
+                            onclick="event.stopPropagation(); console.log('Delete button clicked for transaction ${
+                              transaction.id
+                            }'); window.deleteTransaction(${transaction.id});" 
                             title="Hapus Transaksi"
                             style="cursor: pointer; pointer-events: auto; position: relative; z-index: 10; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 6px 8px; margin: 0 2px; font-size: 12px;">
                         🗑️
@@ -635,54 +650,67 @@ class ModernBudgetUI {
                 </div>
             </div>
         `;
+  }
+
+  // ===== TRANSACTION MANAGEMENT METHODS =====
+  editTransaction(id) {
+    const transaction = this.budgetManager.data.transactions.find((t) => t.id === id);
+    if (!transaction) {
+      this.components.showToast("Transaksi tidak ditemukan!", "error");
+      return;
     }
 
-    // ===== TRANSACTION MANAGEMENT METHODS =====
-    editTransaction(id) {
-        const transaction = this.budgetManager.data.transactions.find(t => t.id === id);
-        if (!transaction) {
-            this.components.showToast('Transaksi tidak ditemukan!', 'error');
-            return;
-        }
+    const categories = this.budgetManager.data.categories.filter((cat) =>
+      transaction.type === "income" ? cat.id >= 8 : cat.id <= 7
+    );
+    const accounts = this.budgetManager.data.accounts;
 
-        const categories = this.budgetManager.data.categories.filter(cat => 
-            transaction.type === 'income' ? cat.id >= 8 : cat.id <= 7
-        );
-        const accounts = this.budgetManager.data.accounts;
-        
-        const modalContent = `
+    const modalContent = `
             <div class="modal-header">
-                <h3 class="modal-title">✏️ Edit ${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</h3>
+                <h3 class="modal-title">✏️ Edit ${transaction.type === "income" ? "Pemasukan" : "Pengeluaran"}</h3>
                 <button class="modal-close" onclick="window.hideModal()">×</button>
             </div>
             <form class="modal-form" id="editTransactionForm">
                 <div class="form-group">
                     <label class="form-label">Jumlah *</label>
-                    <input type="number" id="editAmount" class="form-input" value="${transaction.amount}" required min="1" step="0.01">
+                    <input type="number" id="editAmount" class="form-input" value="${
+                      transaction.amount
+                    }" required min="1" step="0.01">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Kategori *</label>
                     <select id="editCategory" class="form-input" required>
-                        ${categories.map(cat => 
-                            `<option value="${cat.id}" ${cat.id === transaction.categoryId ? 'selected' : ''}>${cat.icon} ${cat.name}</option>`
-                        ).join('')}
+                        ${categories
+                          .map(
+                            (cat) =>
+                              `<option value="${cat.id}" ${cat.id === transaction.categoryId ? "selected" : ""}>${
+                                cat.icon
+                              } ${cat.name}</option>`
+                          )
+                          .join("")}
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Akun *</label>
                     <select id="editAccount" class="form-input" required>
-                        ${accounts.map(acc => {
-                            const accountType = this.budgetManager.data.accountTypes.find(t => t.id === acc.typeId);
-                            return `<option value="${acc.id}" ${acc.id === transaction.accountId ? 'selected' : ''}>${accountType?.icon || '💳'} ${acc.name}</option>`;
-                        }).join('')}
+                        ${accounts
+                          .map((acc) => {
+                            const accountType = this.budgetManager.data.accountTypes.find((t) => t.id === acc.typeId);
+                            return `<option value="${acc.id}" ${acc.id === transaction.accountId ? "selected" : ""}>${
+                              accountType?.icon || "💳"
+                            } ${acc.name}</option>`;
+                          })
+                          .join("")}
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Deskripsi</label>
-                    <input type="text" id="editDescription" class="form-input" value="${transaction.description || ''}" placeholder="Deskripsi (opsional)">
+                    <input type="text" id="editDescription" class="form-input" value="${
+                      transaction.description || ""
+                    }" placeholder="Deskripsi (opsional)">
                 </div>
                 
                 <div class="form-group">
@@ -696,184 +724,197 @@ class ModernBudgetUI {
                 </div>
             </form>
         `;
-        
-        this.components.showModal(modalContent);
-        
-        // Bind form submit
-        document.getElementById('editTransactionForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const amount = parseFloat(document.getElementById('editAmount').value);
-            const categoryId = parseInt(document.getElementById('editCategory').value);
-            const accountId = parseInt(document.getElementById('editAccount').value);
-            const description = document.getElementById('editDescription').value;
-            const date = document.getElementById('editDate').value;
-            
-            try {
-                this.budgetManager.updateTransaction(id, {
-                    amount,
-                    categoryId,
-                    accountId,
-                    description,
-                    date
-                });
-                this.components.showToast('Transaksi berhasil diperbarui!', 'success');
-                this.hideModal();
-                this.render();
-                this.updateUserBalance();
-            } catch (error) {
-                this.components.showToast('Gagal memperbarui transaksi: ' + error.message, 'error');
-            }
+
+    this.components.showModal(modalContent);
+
+    // Bind form submit
+    document.getElementById("editTransactionForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const amount = parseFloat(document.getElementById("editAmount").value);
+      const categoryId = parseInt(document.getElementById("editCategory").value);
+      const accountId = parseInt(document.getElementById("editAccount").value);
+      const description = document.getElementById("editDescription").value;
+      const date = document.getElementById("editDate").value;
+
+      try {
+        this.budgetManager.updateTransaction(id, {
+          amount,
+          categoryId,
+          accountId,
+          description,
+          date,
         });
+        this.components.showToast("Transaksi berhasil diperbarui!", "success");
+        this.hideModal();
+        this.render();
+        this.updateUserBalance();
+      } catch (error) {
+        this.components.showToast("Gagal memperbarui transaksi: " + error.message, "error");
+      }
+    });
+  }
+
+  deleteTransaction(id) {
+    const transaction = this.budgetManager.data.transactions.find((t) => t.id === id);
+    if (!transaction) {
+      this.components.showToast("Transaksi tidak ditemukan!", "error");
+      return;
     }
 
-    deleteTransaction(id) {
-        const transaction = this.budgetManager.data.transactions.find(t => t.id === id);
-        if (!transaction) {
-            this.components.showToast('Transaksi tidak ditemukan!', 'error');
-            return;
-        }
+    const category = this.budgetManager.getCategoryById(transaction.categoryId);
+    const confirmMessage = `Hapus transaksi "${
+      transaction.description || category?.name || "Transaksi"
+    }" sebesar ${this.budgetManager.formatCurrency(transaction.amount)}?`;
 
-        const category = this.budgetManager.getCategoryById(transaction.categoryId);
-        const confirmMessage = `Hapus transaksi "${transaction.description || category?.name || 'Transaksi'}" sebesar ${this.budgetManager.formatCurrency(transaction.amount)}?`;
-        
-        if (confirm(confirmMessage)) {
-            try {
-                this.budgetManager.deleteTransaction(id);
-                this.components.showToast('Transaksi berhasil dihapus!', 'success');
-                this.render();
-                this.updateUserBalance();
-            } catch (error) {
-                this.components.showToast('Gagal menghapus transaksi: ' + error.message, 'error');
-            }
-        }
+    if (confirm(confirmMessage)) {
+      try {
+        this.budgetManager.deleteTransaction(id);
+        this.components.showToast("Transaksi berhasil dihapus!", "success");
+        this.render();
+        this.updateUserBalance();
+      } catch (error) {
+        this.components.showToast("Gagal menghapus transaksi: " + error.message, "error");
+      }
+    }
+  }
+
+  // ===== TRANSACTION FILTERING =====
+  filterTransactions() {
+    const typeFilter = document.getElementById("transactionFilter")?.value || "all";
+    const monthFilter = document.getElementById("monthFilter")?.value || "";
+
+    let filteredTransactions = this.budgetManager.data.transactions;
+
+    // Filter by type
+    if (typeFilter !== "all") {
+      filteredTransactions = filteredTransactions.filter((t) => t.type === typeFilter);
     }
 
-    // ===== TRANSACTION FILTERING =====
-    filterTransactions() {
-        const typeFilter = document.getElementById('transactionFilter')?.value || 'all';
-        const monthFilter = document.getElementById('monthFilter')?.value || '';
-        
-        let filteredTransactions = this.budgetManager.data.transactions;
-        
-        // Filter by type
-        if (typeFilter !== 'all') {
-            filteredTransactions = filteredTransactions.filter(t => t.type === typeFilter);
-        }
-        
-        // Filter by month
-        if (monthFilter) {
-            filteredTransactions = filteredTransactions.filter(t => t.date.startsWith(monthFilter));
-        }
-        
-        // Sort by date (newest first)
-        filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Update the transactions list
-        const transactionsList = document.getElementById('transactionsList');
-        if (transactionsList) {
-            if (filteredTransactions.length > 0) {
-                transactionsList.innerHTML = filteredTransactions.map(t => this.components.renderTransactionItem(t)).join('');
-            } else {
-                transactionsList.innerHTML = `
+    // Filter by month
+    if (monthFilter) {
+      filteredTransactions = filteredTransactions.filter((t) => t.date.startsWith(monthFilter));
+    }
+
+    // Sort by date (newest first)
+    filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Update the transactions list
+    const transactionsList = document.getElementById("transactionsList");
+    if (transactionsList) {
+      if (filteredTransactions.length > 0) {
+        transactionsList.innerHTML = filteredTransactions.map((t) => this.components.renderTransactionItem(t)).join("");
+      } else {
+        transactionsList.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🔍</div>
                         <div class="empty-title">Tidak Ada Transaksi</div>
                         <div class="empty-description">Tidak ada transaksi yang sesuai dengan filter yang dipilih</div>
                     </div>
                 `;
-            }
-        }
+      }
+    }
+  }
+
+  // ===== UTILITY METHODS =====
+  updateUserBalance() {
+    const totalBalance = this.budgetManager.getTotalBalance();
+
+    // Update header balance
+    const headerBalance = document.getElementById("header-balance");
+    if (headerBalance) {
+      headerBalance.textContent = this.budgetManager.formatCurrency(totalBalance);
     }
 
-    // ===== UTILITY METHODS =====
-    updateUserBalance() {
-        const totalBalance = this.budgetManager.getTotalBalance();
-        
-        // Update header balance
-        const headerBalance = document.getElementById('header-balance');
-        if (headerBalance) {
-            headerBalance.textContent = this.budgetManager.formatCurrency(totalBalance);
-        }
-        
-        // Update sidebar balance if it exists
-        const userBalance = document.querySelector('.user-balance');
-        if (userBalance) {
-            userBalance.textContent = this.budgetManager.formatCurrency(totalBalance);
-        }
+    // Update sidebar balance if it exists
+    const userBalance = document.querySelector(".user-balance");
+    if (userBalance) {
+      userBalance.textContent = this.budgetManager.formatCurrency(totalBalance);
+    }
+  }
+
+  handleResize() {
+    if (window.innerWidth > 768) {
+      this.closeMobileSidebar();
+    }
+  }
+
+  initializePageSpecific() {
+    if (this.currentView === "analytics") {
+      // Add event listeners for analytics tabs
+      document.querySelectorAll(".analytics-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          this.switchAnalyticsTab(tab.dataset.tab);
+        });
+      });
     }
 
-    handleResize() {
-        if (window.innerWidth > 768) {
-            this.closeMobileSidebar();
-        }
+    // Add animations for stat cards on dashboard
+    if (this.currentView === "dashboard") {
+      setTimeout(() => {
+        const statCards = document.querySelectorAll(".stat-card");
+        statCards.forEach((card, index) => {
+          setTimeout(() => {
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+            card.classList.add("animate");
+          }, index * 100);
+        });
+      }, 100);
     }
+  }
 
-    initializePageSpecific() {
-        // Initialize page-specific functionality based on current view
-        if (this.currentView === 'analytics') {
-            this.initializeAnalyticsCharts();
-        }
-        
-        // Add animations for stat cards on dashboard
-        if (this.currentView === 'dashboard') {
-            setTimeout(() => {
-                const statCards = document.querySelectorAll('.stat-card');
-                statCards.forEach((card, index) => {
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                        card.classList.add('animate');
-                    }, index * 100);
-                });
-            }, 100);
-        }
+  initializeAnalyticsCharts() {
+    // Placeholder for chart initialization
+    console.log("Analytics charts initialized");
+  }
+
+  // ===== DEMO DATA & RESET =====
+  loadDemoData() {
+    if (confirm("Ini akan mengganti semua data yang ada dengan data demo. Lanjutkan?")) {
+      try {
+        this.budgetManager.generateDemoData();
+        this.components.showToast(
+          "Data demo berhasil dimuat! Silakan cek semua halaman untuk melihat fitur-fitur analisis.",
+          "success"
+        );
+        this.render();
+        this.updateUserBalance();
+        this.preloadData();
+      } catch (error) {
+        this.components.showToast("Gagal memuat data demo: " + error.message, "error");
+      }
     }
+  }
 
-    initializeAnalyticsCharts() {
-        // Placeholder for chart initialization
-        console.log('Analytics charts initialized');
-    }
-
-    // ===== DEMO DATA & RESET =====
-    loadDemoData() {
-        if (confirm('Ini akan mengganti semua data yang ada dengan data demo. Lanjutkan?')) {
-            try {
-                this.budgetManager.generateDemoData();
-                this.components.showToast('Data demo berhasil dimuat! Silakan cek semua halaman untuk melihat fitur-fitur analisis.', 'success');
-                this.render();
-                this.updateUserBalance();
-                this.preloadData();
-            } catch (error) {
-                this.components.showToast('Gagal memuat data demo: ' + error.message, 'error');
-            }
+  resetAllData() {
+    if (
+      confirm(
+        "⚠️ PERINGATAN: Ini akan menghapus SEMUA data (akun, transaksi, target, budget). Yakin ingin melanjutkan?"
+      )
+    ) {
+      if (confirm("Konfirmasi sekali lagi: Semua data akan hilang permanen. Lanjutkan?")) {
+        try {
+          this.budgetManager.resetAllData();
+          this.components.showToast("Semua data berhasil dihapus! Aplikasi kembali ke kondisi awal.", "success");
+          this.render();
+          this.updateUserBalance();
+          this.preloadData();
+        } catch (error) {
+          this.components.showToast("Gagal reset data: " + error.message, "error");
         }
+      }
     }
+  }
 
-    resetAllData() {
-        if (confirm('⚠️ PERINGATAN: Ini akan menghapus SEMUA data (akun, transaksi, target, budget). Yakin ingin melanjutkan?')) {
-            if (confirm('Konfirmasi sekali lagi: Semua data akan hilang permanen. Lanjutkan?')) {
-                try {
-                    this.budgetManager.resetAllData();
-                    this.components.showToast('Semua data berhasil dihapus! Aplikasi kembali ke kondisi awal.', 'success');
-                    this.render();
-                    this.updateUserBalance();
-                    this.preloadData();
-                } catch (error) {
-                    this.components.showToast('Gagal reset data: ' + error.message, 'error');
-                }
-            }
-        }
-    }
+  // ===== PLACEHOLDER METHODS FOR OTHER VIEWS =====
+  renderAccounts() {
+    const totalBalance = this.budgetManager.getTotalBalance();
+    const accounts = this.budgetManager.data.accounts;
+    const positiveAccounts = accounts.filter((a) => a.balance > 0).length;
+    const negativeAccounts = accounts.filter((a) => a.balance < 0).length;
 
-    // ===== PLACEHOLDER METHODS FOR OTHER VIEWS =====
-    renderAccounts() {
-        const totalBalance = this.budgetManager.getTotalBalance();
-        const accounts = this.budgetManager.data.accounts;
-        const positiveAccounts = accounts.filter(a => a.balance > 0).length;
-        const negativeAccounts = accounts.filter(a => a.balance < 0).length;
-
-        return `
+    return `
             <div class="accounts-container">
                 <!-- Account Statistics -->
                 <div class="accounts-stats">
@@ -893,7 +934,7 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${positiveAccounts > 0 ? 'success' : 'warning'}">
+                    <div class="stat-card ${positiveAccounts > 0 ? "success" : "warning"}">
                         <div class="stat-icon">📈</div>
                         <div class="stat-content">
                             <div class="stat-value">${positiveAccounts}</div>
@@ -901,7 +942,7 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${negativeAccounts > 0 ? 'danger' : 'success'}">
+                    <div class="stat-card ${negativeAccounts > 0 ? "danger" : "success"}">
                         <div class="stat-icon">📉</div>
                         <div class="stat-content">
                             <div class="stat-value">${negativeAccounts}</div>
@@ -938,67 +979,72 @@ class ModernBudgetUI {
                     </div>
                     
                     <div class="accounts-grid" id="accountsGrid">
-                        ${accounts.length > 0 ? 
-                            accounts.map(account => this.components.renderAccountCard(account)).join('') :
-                            '<div class="empty-state"><div class="empty-icon">🏦</div><div class="empty-title">Belum Ada Akun</div><div class="empty-description">Tambahkan akun pertama Anda untuk mulai melacak keuangan</div><button class="btn btn-primary" onclick="window.showAddAccountModal()" style="margin-top: 1rem;">Tambah Akun</button></div>'
+                        ${
+                          accounts.length > 0
+                            ? accounts.map((account) => this.components.renderAccountCard(account)).join("")
+                            : '<div class="empty-state"><div class="empty-icon">🏦</div><div class="empty-title">Belum Ada Akun</div><div class="empty-description">Tambahkan akun pertama Anda untuk mulai melacak keuangan</div><button class="btn btn-primary" onclick="window.showAddAccountModal()" style="margin-top: 1rem;">Tambah Akun</button></div>'
                         }
                     </div>
                 </div>
             </div>
         `;
+  }
+
+  // ===== COMPONENT ACCESS METHODS =====
+  hideModal() {
+    this.components.hideModal();
+  }
+
+  showToast(message, type) {
+    this.components.showToast(message, type);
+  }
+
+  // ===== UTILITY METHODS =====
+  generateMonthOptions() {
+    const months = [];
+    const currentDate = new Date();
+
+    // Generate last 12 months
+    for (let i = 1; i <= 12; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthStr = date.toISOString().slice(0, 7);
+      const monthName = date.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+      months.push(`<option value="${monthStr}">${monthName}</option>`);
     }
 
-    // ===== COMPONENT ACCESS METHODS =====
-    hideModal() {
-        this.components.hideModal();
-    }
+    return months.join("");
+  }
 
-    showToast(message, type) {
-        this.components.showToast(message, type);
-    }
+  getTimeAgo(date) {
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // ===== UTILITY METHODS =====
-    generateMonthOptions() {
-        const months = [];
-        const currentDate = new Date();
-        
-        // Generate last 12 months
-        for (let i = 1; i <= 12; i++) {
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-            const monthStr = date.toISOString().slice(0, 7);
-            const monthName = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-            months.push(`<option value="${monthStr}">${monthName}</option>`);
-        }
-        
-        return months.join('');
-    }
+    if (diffDays === 1) return "Kemarin";
+    if (diffDays < 7) return `${diffDays} hari lalu`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lalu`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} bulan lalu`;
+    return `${Math.floor(diffDays / 365)} tahun lalu`;
+  }
 
-    getTimeAgo(date) {
-        const now = new Date();
-        const diffTime = Math.abs(now - date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 1) return 'Kemarin';
-        if (diffDays < 7) return `${diffDays} hari lalu`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lalu`;
-        if (diffDays < 365) return `${Math.floor(diffDays / 30)} bulan lalu`;
-        return `${Math.floor(diffDays / 365)} tahun lalu`;
-    }
+  // ===== GOALS PAGE RENDERING =====
+  renderGoals() {
+    const goals = this.budgetManager.data.goals || [];
+    console.log("🎯 renderGoals called with goals:", goals.length, goals);
 
-    // ===== GOALS PAGE RENDERING =====
-    renderGoals() {
-        const goals = this.budgetManager.data.goals || [];
-        console.log('🎯 renderGoals called with goals:', goals.length, goals);
-        
-        // Fix property mapping for Supabase compatibility
-        const completedGoals = goals.filter(g => (g.currentAmount || g.current_amount || 0) >= (g.targetAmount || g.target_amount || g.target || 0)).length;
-        const activeGoals = goals.filter(g => (g.currentAmount || g.current_amount || 0) < (g.targetAmount || g.target_amount || g.target || 0)).length;
-        const totalTargetAmount = goals.reduce((sum, g) => sum + (g.targetAmount || g.target_amount || g.target || 0), 0);
-        const totalCurrentAmount = goals.reduce((sum, g) => sum + (g.currentAmount || g.current_amount || 0), 0);
+    // Fix property mapping for Supabase compatibility
+    const completedGoals = goals.filter(
+      (g) => (g.currentAmount || g.current_amount || 0) >= (g.targetAmount || g.target_amount || g.target || 0)
+    ).length;
+    const activeGoals = goals.filter(
+      (g) => (g.currentAmount || g.current_amount || 0) < (g.targetAmount || g.target_amount || g.target || 0)
+    ).length;
+    const totalTargetAmount = goals.reduce((sum, g) => sum + (g.targetAmount || g.target_amount || g.target || 0), 0);
+    const totalCurrentAmount = goals.reduce((sum, g) => sum + (g.currentAmount || g.current_amount || 0), 0);
 
-        console.log('🎯 Goals stats:', { completedGoals, activeGoals, totalTargetAmount, totalCurrentAmount });
+    console.log("🎯 Goals stats:", { completedGoals, activeGoals, totalTargetAmount, totalCurrentAmount });
 
-        return `
+    return `
             <div class="goals-container">
                 <!-- Goals Statistics -->
                 <div class="goals-stats">
@@ -1010,7 +1056,7 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${completedGoals > 0 ? 'success' : 'info'}">
+                    <div class="stat-card ${completedGoals > 0 ? "success" : "info"}">
                         <div class="stat-icon">✅</div>
                         <div class="stat-content">
                             <div class="stat-value">${completedGoals}</div>
@@ -1062,23 +1108,24 @@ class ModernBudgetUI {
                     </div>
                     
                     <div class="goals-grid" id="goalsGrid">
-                        ${goals.length > 0 ? 
-                            goals.map(goal => this.components.renderGoalCard(goal)).join('') :
-                            '<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Belum Ada Target</div><div class="empty-description">Buat target keuangan pertama Anda untuk mencapai impian finansial</div><button class="btn btn-primary" onclick="window.showAddGoalModal()" style="margin-top: 1rem;">Tambah Target</button></div>'
+                        ${
+                          goals.length > 0
+                            ? goals.map((goal) => this.components.renderGoalCard(goal)).join("")
+                            : '<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Belum Ada Target</div><div class="empty-description">Buat target keuangan pertama Anda untuk mencapai impian finansial</div><button class="btn btn-primary" onclick="window.showAddGoalModal()" style="margin-top: 1rem;">Tambah Target</button></div>'
                         }
                     </div>
                 </div>
             </div>
         `;
-    }
+  }
 
-    // ===== ANALYTICS PAGE RENDERING =====
-    renderAdvancedAnalytics() {
-        const monthlyStats = this.analytics.getMonthlyStats();
-        const weeklyTrend = this.analytics.getWeeklyTrend();
-        const healthScore = this.analytics.calculateFinancialHealthScore();
+  // ===== ANALYTICS PAGE RENDERING =====
+  renderAdvancedAnalytics() {
+    const monthlyStats = this.analytics.getMonthlyStats();
+    const weeklyTrend = this.analytics.getWeeklyTrend();
+    const healthScore = this.analytics.calculateFinancialHealthScore();
 
-        return `
+    return `
             <div class="analytics-container">
                 <!-- Analytics Overview Stats -->
                 <div class="analytics-stats">
@@ -1090,15 +1137,17 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${healthScore >= 80 ? 'success' : healthScore >= 60 ? 'warning' : 'danger'}">
-                        <div class="stat-icon">${healthScore >= 80 ? '💚' : healthScore >= 60 ? '💛' : '❤️'}</div>
+                    <div class="stat-card ${healthScore >= 80 ? "success" : healthScore >= 60 ? "warning" : "danger"}">
+                        <div class="stat-icon">${healthScore >= 80 ? "💚" : healthScore >= 60 ? "💛" : "❤️"}</div>
                         <div class="stat-content">
                             <div class="stat-value">${healthScore}%</div>
                             <div class="stat-label">Skor Kesehatan Keuangan</div>
                         </div>
                     </div>
                     
-                    <div class="stat-card ${monthlyStats.savingsRate >= 20 ? 'success' : monthlyStats.savingsRate >= 10 ? 'warning' : 'danger'}">
+                    <div class="stat-card ${
+                      monthlyStats.savingsRate >= 20 ? "success" : monthlyStats.savingsRate >= 10 ? "warning" : "danger"
+                    }">
                         <div class="stat-icon">💰</div>
                         <div class="stat-content">
                             <div class="stat-value">${monthlyStats.savingsRate.toFixed(1)}%</div>
@@ -1106,8 +1155,16 @@ class ModernBudgetUI {
                         </div>
                     </div>
                     
-                    <div class="stat-card ${weeklyTrend.trend === 'increasing' ? 'danger' : weeklyTrend.trend === 'decreasing' ? 'success' : 'info'}">
-                        <div class="stat-icon">${weeklyTrend.trend === 'increasing' ? '📈' : weeklyTrend.trend === 'decreasing' ? '📉' : '➡️'}</div>
+                    <div class="stat-card ${
+                      weeklyTrend.trend === "increasing"
+                        ? "danger"
+                        : weeklyTrend.trend === "decreasing"
+                        ? "success"
+                        : "info"
+                    }">
+                        <div class="stat-icon">${
+                          weeklyTrend.trend === "increasing" ? "📈" : weeklyTrend.trend === "decreasing" ? "📉" : "➡️"
+                        }</div>
                         <div class="stat-content">
                             <div class="stat-value">${Math.abs(weeklyTrend.percentageChange).toFixed(1)}%</div>
                             <div class="stat-label">Tren Pengeluaran</div>
@@ -1117,59 +1174,65 @@ class ModernBudgetUI {
 
                 <!-- Analytics Tabs -->
                 <div class="analytics-tabs">
-                    <button class="analytics-tab active" data-tab="overview" onclick="window.switchAnalyticsTab('overview')">
+                    <button class="analytics-tab active" data-tab="overview">
                         📊 Ringkasan
                     </button>
-                    <button class="analytics-tab" data-tab="categories" onclick="window.switchAnalyticsTab('categories')">
+                    <button class="analytics-tab" data-tab="categories">
                         🏷️ Kategori
                     </button>
-                    <button class="analytics-tab" data-tab="insights" onclick="window.switchAnalyticsTab('insights')">
+                    <button class="analytics-tab" data-tab="insights">
                         💡 Insights
                     </button>
                 </div>
 
                 <!-- Analytics Content -->
                 <div class="analytics-content" id="analyticsContent">
-                    ${this.renderAnalyticsTab('overview')}
+                    ${this.renderAnalyticsTab("overview")}
                 </div>
             </div>
         `;
-    }
+  }
 
-    renderAnalyticsTab(tab) {
-        switch(tab) {
-            case 'overview':
-                return this.renderOverviewAnalytics();
-            case 'categories':
-                return this.renderCategoriesAnalytics();
-            case 'insights':
-                return this.renderInsightsAnalytics();
-            default:
-                return this.renderOverviewAnalytics();
-        }
+  renderAnalyticsTab(tab) {
+    switch (tab) {
+      case "overview":
+        return this.renderOverviewAnalytics();
+      case "categories":
+        return this.renderCategoriesAnalytics();
+      case "insights":
+        return this.renderInsightsAnalytics();
+      default:
+        return this.renderOverviewAnalytics();
     }
+  }
 
-    renderOverviewAnalytics() {
-        const monthlyStats = this.analytics.getMonthlyStats();
-        const expensePatterns = this.analytics.analyzeExpensePatterns();
-        
-        return `
+  renderOverviewAnalytics() {
+    const monthlyStats = this.analytics.getMonthlyStats();
+    const expensePatterns = this.analytics.analyzeExpensePatterns();
+
+    return `
             <div class="analytics-overview">
                 <div class="analytics-section">
                     <h3 class="analytics-section-title">📊 Ringkasan Bulan Ini</h3>
                     <div class="overview-cards">
                         <div class="overview-card">
                             <div class="overview-label">Pemasukan</div>
-                            <div class="overview-value income">+${this.budgetManager.formatCurrency(monthlyStats.income)}</div>
+                            <div class="overview-value income">+${this.budgetManager.formatCurrency(
+                              monthlyStats.income
+                            )}</div>
                         </div>
                         <div class="overview-card">
                             <div class="overview-label">Pengeluaran</div>
-                            <div class="overview-value expense">-${this.budgetManager.formatCurrency(monthlyStats.expense)}</div>
+                            <div class="overview-value expense">-${this.budgetManager.formatCurrency(
+                              monthlyStats.expense
+                            )}</div>
                         </div>
                         <div class="overview-card">
                             <div class="overview-label">Saldo Bersih</div>
-                            <div class="overview-value ${monthlyStats.balance >= 0 ? 'positive' : 'negative'}">
-                                ${monthlyStats.balance >= 0 ? '+' : ''}${this.budgetManager.formatCurrency(monthlyStats.balance)}
+                            <div class="overview-value ${monthlyStats.balance >= 0 ? "positive" : "negative"}">
+                                ${monthlyStats.balance >= 0 ? "+" : ""}${this.budgetManager.formatCurrency(
+      monthlyStats.balance
+    )}
                             </div>
                         </div>
                     </div>
@@ -1184,25 +1247,29 @@ class ModernBudgetUI {
                         </div>
                         <div class="pattern-item">
                             <div class="pattern-label">Rata-rata per Hari:</div>
-                            <div class="pattern-value">${this.budgetManager.formatCurrency(expensePatterns.averageDaily)}</div>
+                            <div class="pattern-value">${this.budgetManager.formatCurrency(
+                              expensePatterns.averageDaily
+                            )}</div>
                         </div>
                         <div class="pattern-item">
                             <div class="pattern-label">Transaksi Terbesar:</div>
-                            <div class="pattern-value">${this.budgetManager.formatCurrency(expensePatterns.largestTransaction)}</div>
+                            <div class="pattern-value">${this.budgetManager.formatCurrency(
+                              expensePatterns.largestTransaction
+                            )}</div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-    }
+  }
 
-    renderCategoriesAnalytics() {
-        try {
-            const categoryExpenses = this.analytics.getCategoryExpenses();
-            console.log('📊 Category expenses data:', categoryExpenses);
-            
-            if (!categoryExpenses || categoryExpenses.length === 0) {
-                return `
+  renderCategoriesAnalytics() {
+    try {
+      const categoryExpenses = this.analytics.getCategoryExpenses();
+      console.log("📊 Category expenses data:", categoryExpenses);
+
+      if (!categoryExpenses || categoryExpenses.length === 0) {
+        return `
                     <div class="analytics-categories">
                         <div class="analytics-section">
                             <h3 class="analytics-section-title">🏷️ Pengeluaran per Kategori</h3>
@@ -1214,35 +1281,43 @@ class ModernBudgetUI {
                         </div>
                     </div>
                 `;
-            }
-            
-            return `
+      }
+
+      return `
                 <div class="analytics-categories">
                     <div class="analytics-section">
                         <h3 class="analytics-section-title">🏷️ Pengeluaran per Kategori</h3>
                         <div class="category-list">
-                            ${categoryExpenses.map(cat => `
+                            ${categoryExpenses
+                              .map(
+                                (cat) => `
                                 <div class="category-item">
                                     <div class="category-info">
-                                        <div class="category-icon">${cat.icon || '📋'}</div>
+                                        <div class="category-icon">${cat.icon || "📋"}</div>
                                         <div class="category-details">
-                                            <div class="category-name">${cat.name || 'Unknown'}</div>
-                                            <div class="category-transactions">${cat.transactionCount || 0} transaksi</div>
+                                            <div class="category-name">${cat.name || "Unknown"}</div>
+                                            <div class="category-transactions">${
+                                              cat.transactionCount || 0
+                                            } transaksi</div>
                                         </div>
                                     </div>
                                     <div class="category-amount">
-                                        <div class="category-value">${this.budgetManager.formatCurrency(cat.amount || 0)}</div>
+                                        <div class="category-value">${this.budgetManager.formatCurrency(
+                                          cat.amount || 0
+                                        )}</div>
                                         <div class="category-percentage">${(cat.percentage || 0).toFixed(1)}%</div>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `
+                              )
+                              .join("")}
                         </div>
                     </div>
                 </div>
             `;
-        } catch (error) {
-            console.error('📊 Error in renderCategoriesAnalytics:', error);
-            return `
+    } catch (error) {
+      console.error("📊 Error in renderCategoriesAnalytics:", error);
+      return `
                 <div class="analytics-categories">
                     <div class="analytics-section">
                         <h3 class="analytics-section-title">🏷️ Pengeluaran per Kategori</h3>
@@ -1254,16 +1329,16 @@ class ModernBudgetUI {
                     </div>
                 </div>
             `;
-        }
     }
+  }
 
-    renderInsightsAnalytics() {
-        try {
-            const insights = this.analytics.generateInsights();
-            console.log('📊 Generated insights:', insights);
-            
-            if (!insights || insights.length === 0) {
-                return `
+  renderInsightsAnalytics() {
+    try {
+      const insights = this.analytics.generateInsights();
+      console.log("📊 Generated insights:", insights);
+
+      if (!insights || insights.length === 0) {
+        return `
                     <div class="analytics-insights">
                         <div class="analytics-section">
                             <h3 class="analytics-section-title">💡 Insights & Rekomendasi</h3>
@@ -1275,33 +1350,45 @@ class ModernBudgetUI {
                         </div>
                     </div>
                 `;
-            }
-            
-            return `
+      }
+
+      return `
                 <div class="analytics-insights">
                     <div class="analytics-section">
                         <h3 class="analytics-section-title">💡 Insights & Rekomendasi</h3>
                         <div class="insights-list">
-                            ${insights.map(insight => `
-                                <div class="insight-item ${insight.type || 'info'}">
+                            ${insights
+                              .map(
+                                (insight) => `
+                                <div class="insight-item ${insight.type || "info"}">
                                     <div class="insight-icon">
-                                        ${insight.type === 'warning' ? '⚠️' : 
-                                          insight.type === 'success' ? '✅' : 
-                                          insight.type === 'info' ? 'ℹ️' : '💡'}
+                                        ${
+                                          insight.type === "warning"
+                                            ? "⚠️"
+                                            : insight.type === "success"
+                                            ? "✅"
+                                            : insight.type === "info"
+                                            ? "ℹ️"
+                                            : "💡"
+                                        }
                                     </div>
                                     <div class="insight-content">
-                                        <div class="insight-title">${insight.title || 'Insight'}</div>
-                                        <div class="insight-description">${insight.description || 'No description available'}</div>
+                                        <div class="insight-title">${insight.title || "Insight"}</div>
+                                        <div class="insight-description">${
+                                          insight.description || "No description available"
+                                        }</div>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `
+                              )
+                              .join("")}
                         </div>
                     </div>
                 </div>
             `;
-        } catch (error) {
-            console.error('📊 Error in renderInsightsAnalytics:', error);
-            return `
+    } catch (error) {
+      console.error("📊 Error in renderInsightsAnalytics:", error);
+      return `
                 <div class="analytics-insights">
                     <div class="analytics-section">
                         <h3 class="analytics-section-title">💡 Insights & Rekomendasi</h3>
@@ -1313,36 +1400,36 @@ class ModernBudgetUI {
                     </div>
                 </div>
             `;
-        }
+    }
+  }
+
+  switchAnalyticsTab(tab) {
+    // Update tab states
+    document.querySelectorAll(".analytics-tab").forEach((t) => {
+      t.classList.toggle("active", t.dataset.tab === tab);
+    });
+
+    // Update content
+    const content = document.getElementById("analyticsContent");
+    if (content) {
+      content.innerHTML = this.renderAnalyticsTab(tab);
     }
 
-    switchAnalyticsTab(tab) {
-        // Update tab states
-        document.querySelectorAll('.analytics-tab').forEach(t => {
-            t.classList.toggle('active', t.dataset.tab === tab);
-        });
-        
-        // Update content
-        const content = document.getElementById('analyticsContent');
-        if (content) {
-            content.innerHTML = this.renderAnalyticsTab(tab);
-        }
-        
-        this.analyticsMode = tab;
+    this.analyticsMode = tab;
+  }
+
+  // ===== ACCOUNT MANAGEMENT METHODS =====
+  editAccount(id) {
+    const account = this.budgetManager.data.accounts.find((a) => a.id === id);
+    if (!account) {
+      this.components.showToast("Akun tidak ditemukan!", "error");
+      return;
     }
 
-    // ===== ACCOUNT MANAGEMENT METHODS =====
-    editAccount(id) {
-        const account = this.budgetManager.data.accounts.find(a => a.id === id);
-        if (!account) {
-            this.components.showToast('Akun tidak ditemukan!', 'error');
-            return;
-        }
+    const accountTypes = this.budgetManager.data.accountTypes;
+    const accountType = accountTypes.find((t) => t.id === account.typeId);
 
-        const accountTypes = this.budgetManager.data.accountTypes;
-        const accountType = accountTypes.find(t => t.id === account.typeId);
-        
-        const modalContent = `
+    const modalContent = `
             <div class="modal-header">
                 <h3 class="modal-title">✏️ Edit Akun</h3>
                 <button class="modal-close" onclick="window.hideModal()">×</button>
@@ -1356,17 +1443,22 @@ class ModernBudgetUI {
                 <div class="form-group">
                     <label class="form-label">Jenis Akun *</label>
                     <select id="editAccountType" class="form-input" required>
-                        ${accountTypes.map(type => 
-                            `<option value="${type.id}" ${type.id === account.typeId ? 'selected' : ''}>
+                        ${accountTypes
+                          .map(
+                            (type) =>
+                              `<option value="${type.id}" ${type.id === account.typeId ? "selected" : ""}>
                                 ${type.icon} ${type.name}
                             </option>`
-                        ).join('')}
+                          )
+                          .join("")}
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Saldo Saat Ini</label>
-                    <input type="number" id="editAccountBalance" class="form-input" value="${account.balance}" step="0.01">
+                    <input type="number" id="editAccountBalance" class="form-input" value="${
+                      account.balance
+                    }" step="0.01">
                     <div class="form-help">Saldo saat ini di akun tersebut</div>
                 </div>
                 
@@ -1376,101 +1468,99 @@ class ModernBudgetUI {
                 </div>
             </form>
         `;
-        
-        this.components.showModal(modalContent);
-        
-        // Bind form submit
-        document.getElementById('editAccountForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('editAccountName').value.trim();
-            const typeId = parseInt(document.getElementById('editAccountType').value);
-            const balance = parseFloat(document.getElementById('editAccountBalance').value) || 0;
-            
-            if (!name) {
-                this.components.showToast('Nama akun harus diisi!', 'error');
-                return;
-            }
-            
-            try {
-                this.budgetManager.updateAccount(id, { name, typeId, balance });
-                this.components.showToast('Akun berhasil diperbarui!', 'success');
-                this.hideModal();
-                this.render();
-                this.updateUserBalance();
-            } catch (error) {
-                this.components.showToast('Gagal memperbarui akun: ' + error.message, 'error');
-            }
-        });
+
+    this.components.showModal(modalContent);
+
+    // Bind form submit
+    document.getElementById("editAccountForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("editAccountName").value.trim();
+      const typeId = parseInt(document.getElementById("editAccountType").value);
+      const balance = parseFloat(document.getElementById("editAccountBalance").value) || 0;
+
+      if (!name) {
+        this.components.showToast("Nama akun harus diisi!", "error");
+        return;
+      }
+
+      try {
+        this.budgetManager.updateAccount(id, { name, typeId, balance });
+        this.components.showToast("Akun berhasil diperbarui!", "success");
+        this.hideModal();
+        this.render();
+        this.updateUserBalance();
+      } catch (error) {
+        this.components.showToast("Gagal memperbarui akun: " + error.message, "error");
+      }
+    });
+  }
+
+  deleteAccount(id) {
+    const account = this.budgetManager.data.accounts.find((a) => a.id === id);
+    if (!account) {
+      this.components.showToast("Akun tidak ditemukan!", "error");
+      return;
     }
 
-    deleteAccount(id) {
-        const account = this.budgetManager.data.accounts.find(a => a.id === id);
-        if (!account) {
-            this.components.showToast('Akun tidak ditemukan!', 'error');
-            return;
-        }
+    const transactionCount = this.budgetManager.data.transactions.filter((t) => t.accountId === id).length;
+    let confirmMessage = `Hapus akun "${account.name}"?`;
 
-        const transactionCount = this.budgetManager.data.transactions.filter(t => t.accountId === id).length;
-        let confirmMessage = `Hapus akun "${account.name}"?`;
-        
-        if (transactionCount > 0) {
-            confirmMessage += `\n\nPeringatan: Ada ${transactionCount} transaksi yang terkait dengan akun ini. Semua transaksi tersebut juga akan dihapus!`;
-        }
-        
-        if (confirm(confirmMessage)) {
-            try {
-                // Delete related transactions first
-                this.budgetManager.data.transactions = this.budgetManager.data.transactions.filter(t => t.accountId !== id);
-                
-                // Delete account
-                this.budgetManager.deleteAccount(id);
-                this.components.showToast('Akun berhasil dihapus!', 'success');
-                this.render();
-                this.updateUserBalance();
-            } catch (error) {
-                this.components.showToast('Gagal menghapus akun: ' + error.message, 'error');
-            }
-        }
+    if (transactionCount > 0) {
+      confirmMessage += `\n\nPeringatan: Ada ${transactionCount} transaksi yang terkait dengan akun ini. Semua transaksi tersebut juga akan dihapus!`;
     }
 
-    filterAccounts() {
-        const typeFilter = document.getElementById('accountTypeFilter')?.value || 'all';
-        let filteredAccounts = this.budgetManager.data.accounts;
-        
-        if (typeFilter !== 'all') {
-            const accountTypes = this.budgetManager.data.accountTypes;
-            const targetTypeIds = accountTypes
-                .filter(t => t.name.toLowerCase().includes(typeFilter))
-                .map(t => t.id);
-            filteredAccounts = filteredAccounts.filter(a => targetTypeIds.includes(a.typeId));
-        }
-        
-        const accountsGrid = document.getElementById('accountsGrid');
-        if (accountsGrid) {
-            if (filteredAccounts.length > 0) {
-                accountsGrid.innerHTML = filteredAccounts.map(a => this.components.renderAccountCard(a)).join('');
-            } else {
-                accountsGrid.innerHTML = `
+    if (confirm(confirmMessage)) {
+      try {
+        // Delete related transactions first
+        this.budgetManager.data.transactions = this.budgetManager.data.transactions.filter((t) => t.accountId !== id);
+
+        // Delete account
+        this.budgetManager.deleteAccount(id);
+        this.components.showToast("Akun berhasil dihapus!", "success");
+        this.render();
+        this.updateUserBalance();
+      } catch (error) {
+        this.components.showToast("Gagal menghapus akun: " + error.message, "error");
+      }
+    }
+  }
+
+  filterAccounts() {
+    const typeFilter = document.getElementById("accountTypeFilter")?.value || "all";
+    let filteredAccounts = this.budgetManager.data.accounts;
+
+    if (typeFilter !== "all") {
+      const accountTypes = this.budgetManager.data.accountTypes;
+      const targetTypeIds = accountTypes.filter((t) => t.name.toLowerCase().includes(typeFilter)).map((t) => t.id);
+      filteredAccounts = filteredAccounts.filter((a) => targetTypeIds.includes(a.typeId));
+    }
+
+    const accountsGrid = document.getElementById("accountsGrid");
+    if (accountsGrid) {
+      if (filteredAccounts.length > 0) {
+        accountsGrid.innerHTML = filteredAccounts.map((a) => this.components.renderAccountCard(a)).join("");
+      } else {
+        accountsGrid.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🔍</div>
                         <div class="empty-title">Tidak Ada Akun</div>
                         <div class="empty-description">Tidak ada akun yang sesuai dengan filter yang dipilih</div>
                     </div>
                 `;
-            }
-        }
+      }
+    }
+  }
+
+  // ===== GOAL MANAGEMENT METHODS =====
+  editGoal(id) {
+    const goal = this.budgetManager.data.goals?.find((g) => g.id === id);
+    if (!goal) {
+      this.components.showToast("Target tidak ditemukan!", "error");
+      return;
     }
 
-    // ===== GOAL MANAGEMENT METHODS =====
-    editGoal(id) {
-        const goal = this.budgetManager.data.goals?.find(g => g.id === id);
-        if (!goal) {
-            this.components.showToast('Target tidak ditemukan!', 'error');
-            return;
-        }
-        
-        const modalContent = `
+    const modalContent = `
             <div class="modal-header">
                 <h3 class="modal-title">✏️ Edit Target</h3>
                 <button class="modal-close" onclick="window.hideModal()">×</button>
@@ -1483,18 +1573,22 @@ class ModernBudgetUI {
                 
                 <div class="form-group">
                     <label class="form-label">Target Nominal *</label>
-                    <input type="number" id="editTargetAmount" class="form-input" value="${goal.target}" required min="1" step="0.01">
+                    <input type="number" id="editTargetAmount" class="form-input" value="${
+                      goal.target
+                    }" required min="1" step="0.01">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Jumlah Saat Ini</label>
-                    <input type="number" id="editCurrentAmount" class="form-input" value="${goal.currentAmount}" min="0" step="0.01">
+                    <input type="number" id="editCurrentAmount" class="form-input" value="${
+                      goal.currentAmount
+                    }" min="0" step="0.01">
                     <div class="form-help">Sudah berapa yang terkumpul saat ini</div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Target Tanggal</label>
-                    <input type="date" id="editDeadline" class="form-input" value="${goal.deadline || ''}">
+                    <input type="date" id="editDeadline" class="form-input" value="${goal.deadline || ""}">
                     <div class="form-help">Kapan target ini ingin dicapai (opsional)</div>
                 </div>
                 
@@ -1504,118 +1598,120 @@ class ModernBudgetUI {
                 </div>
             </form>
         `;
-        
-        this.components.showModal(modalContent);
-        
-        // Set minimum date to today
-        const deadlineInput = document.getElementById('editDeadline');
-        if (deadlineInput) {
-            deadlineInput.min = new Date().toISOString().split('T')[0];
-        }
-        
-        // Bind form submit
-        document.getElementById('editGoalForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('editGoalName').value.trim();
-            const target = parseFloat(document.getElementById('editTargetAmount').value);
-            const currentAmount = parseFloat(document.getElementById('editCurrentAmount').value) || 0;
-            const deadline = document.getElementById('editDeadline').value || null;
-            
-            if (!name) {
-                this.components.showToast('Nama target harus diisi!', 'error');
-                return;
-            }
-            
-            if (currentAmount > target) {
-                this.components.showToast('Jumlah saat ini tidak boleh lebih dari target!', 'error');
-                return;
-            }
-            
-            try {
-                const updatedGoal = this.budgetManager.data.goals.find(g => g.id === id);
-                if (updatedGoal) {
-                    updatedGoal.name = name;
-                    updatedGoal.target = target;
-                    updatedGoal.currentAmount = currentAmount;
-                    updatedGoal.deadline = deadline;
-                    this.budgetManager.saveData();
-                    
-                    this.components.showToast('Target berhasil diperbarui!', 'success');
-                    this.hideModal();
-                    this.render();
-                }
-            } catch (error) {
-                this.components.showToast('Gagal memperbarui target: ' + error.message, 'error');
-            }
-        });
+
+    this.components.showModal(modalContent);
+
+    // Set minimum date to today
+    const deadlineInput = document.getElementById("editDeadline");
+    if (deadlineInput) {
+      deadlineInput.min = new Date().toISOString().split("T")[0];
     }
 
-    deleteGoal(id) {
-        const goal = this.budgetManager.data.goals?.find(g => g.id === id);
-        if (!goal) {
-            this.components.showToast('Target tidak ditemukan!', 'error');
-            return;
-        }
+    // Bind form submit
+    document.getElementById("editGoalForm").addEventListener("submit", (e) => {
+      e.preventDefault();
 
-        const progress = goal.target > 0 ? (goal.currentAmount / goal.target) * 100 : 0;
-        let confirmMessage = `Hapus target "${goal.name}"?`;
-        
-        if (progress > 0) {
-            confirmMessage += `\n\nTarget ini sudah ${Math.round(progress)}% tercapai (${this.budgetManager.formatCurrency(goal.currentAmount)} dari ${this.budgetManager.formatCurrency(goal.target)}).`;
+      const name = document.getElementById("editGoalName").value.trim();
+      const target = parseFloat(document.getElementById("editTargetAmount").value);
+      const currentAmount = parseFloat(document.getElementById("editCurrentAmount").value) || 0;
+      const deadline = document.getElementById("editDeadline").value || null;
+
+      if (!name) {
+        this.components.showToast("Nama target harus diisi!", "error");
+        return;
+      }
+
+      if (currentAmount > target) {
+        this.components.showToast("Jumlah saat ini tidak boleh lebih dari target!", "error");
+        return;
+      }
+
+      try {
+        const updatedGoal = this.budgetManager.data.goals.find((g) => g.id === id);
+        if (updatedGoal) {
+          updatedGoal.name = name;
+          updatedGoal.target = target;
+          updatedGoal.currentAmount = currentAmount;
+          updatedGoal.deadline = deadline;
+          this.budgetManager.saveData();
+
+          this.components.showToast("Target berhasil diperbarui!", "success");
+          this.hideModal();
+          this.render();
         }
-        
-        if (confirm(confirmMessage)) {
-            try {
-                this.budgetManager.deleteGoal(id);
-                this.components.showToast('Target berhasil dihapus!', 'success');
-                this.render();
-            } catch (error) {
-                this.components.showToast('Gagal menghapus target: ' + error.message, 'error');
-            }
-        }
+      } catch (error) {
+        this.components.showToast("Gagal memperbarui target: " + error.message, "error");
+      }
+    });
+  }
+
+  deleteGoal(id) {
+    const goal = this.budgetManager.data.goals?.find((g) => g.id === id);
+    if (!goal) {
+      this.components.showToast("Target tidak ditemukan!", "error");
+      return;
     }
 
-    filterGoals() {
-        const statusFilter = document.getElementById('goalStatusFilter')?.value || 'all';
-        let filteredGoals = this.budgetManager.data.goals || [];
-        
-        if (statusFilter !== 'all') {
-            const now = new Date();
-            filteredGoals = filteredGoals.filter(goal => {
-                const isCompleted = goal.currentAmount >= goal.target;
-                const deadline = new Date(goal.deadline);
-                const isOverdue = deadline < now && !isCompleted;
-                
-                switch(statusFilter) {
-                    case 'active':
-                        return !isCompleted && !isOverdue;
-                    case 'completed':
-                        return isCompleted;
-                    case 'overdue':
-                        return isOverdue;
-                    default:
-                        return true;
-                }
-            });
+    const progress = goal.target > 0 ? (goal.currentAmount / goal.target) * 100 : 0;
+    let confirmMessage = `Hapus target "${goal.name}"?`;
+
+    if (progress > 0) {
+      confirmMessage += `\n\nTarget ini sudah ${Math.round(progress)}% tercapai (${this.budgetManager.formatCurrency(
+        goal.currentAmount
+      )} dari ${this.budgetManager.formatCurrency(goal.target)}).`;
+    }
+
+    if (confirm(confirmMessage)) {
+      try {
+        this.budgetManager.deleteGoal(id);
+        this.components.showToast("Target berhasil dihapus!", "success");
+        this.render();
+      } catch (error) {
+        this.components.showToast("Gagal menghapus target: " + error.message, "error");
+      }
+    }
+  }
+
+  filterGoals() {
+    const statusFilter = document.getElementById("goalStatusFilter")?.value || "all";
+    let filteredGoals = this.budgetManager.data.goals || [];
+
+    if (statusFilter !== "all") {
+      const now = new Date();
+      filteredGoals = filteredGoals.filter((goal) => {
+        const isCompleted = goal.currentAmount >= goal.target;
+        const deadline = new Date(goal.deadline);
+        const isOverdue = deadline < now && !isCompleted;
+
+        switch (statusFilter) {
+          case "active":
+            return !isCompleted && !isOverdue;
+          case "completed":
+            return isCompleted;
+          case "overdue":
+            return isOverdue;
+          default:
+            return true;
         }
-        
-        const goalsGrid = document.getElementById('goalsGrid');
-        if (goalsGrid) {
-            if (filteredGoals.length > 0) {
-                goalsGrid.innerHTML = filteredGoals.map(g => this.components.renderGoalCard(g)).join('');
-            } else {
-                goalsGrid.innerHTML = `
+      });
+    }
+
+    const goalsGrid = document.getElementById("goalsGrid");
+    if (goalsGrid) {
+      if (filteredGoals.length > 0) {
+        goalsGrid.innerHTML = filteredGoals.map((g) => this.components.renderGoalCard(g)).join("");
+      } else {
+        goalsGrid.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🔍</div>
                         <div class="empty-title">Tidak Ada Target</div>
                         <div class="empty-description">Tidak ada target yang sesuai dengan filter yang dipilih</div>
                     </div>
                 `;
-            }
-        }
+      }
     }
-} 
+  }
+}
 
 // Export alias for compatibility
 const UI = ModernBudgetUI;
