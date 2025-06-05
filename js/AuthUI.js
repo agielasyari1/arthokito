@@ -207,7 +207,7 @@ class AuthUI {
                     <nav class="sidebar-nav">
                         <div class="nav-section">
                             <div class="nav-section-title">Menu Utama</div>
-                            <a href="#" class="nav-item active" data-page="dashboard" onclick="window.ui.showPage('dashboard')">
+                            <a href="#" class="nav-item active" data-page="dashboard">
                                 <span class="nav-icon">📊</span>
                                 <div class="nav-content">
                                     <div class="nav-text">Dashboard</div>
@@ -215,21 +215,21 @@ class AuthUI {
                                 </div>
                                 <span class="nav-indicator"></span>
                             </a>
-                            <a href="#" class="nav-item" data-page="transactions" onclick="window.ui.showPage('transactions')">
+                            <a href="#" class="nav-item" data-page="transactions">
                                 <span class="nav-icon">💳</span>
                                 <div class="nav-content">
                                     <div class="nav-text">Transaksi</div>
                                     <div class="nav-desc">Pemasukan & pengeluaran</div>
                                 </div>
                             </a>
-                            <a href="#" class="nav-item" data-page="accounts" onclick="window.ui.showPage('accounts')">
+                            <a href="#" class="nav-item" data-page="accounts">
                                 <span class="nav-icon">🏦</span>
                                 <div class="nav-content">
                                     <div class="nav-text">Akun</div>
                                     <div class="nav-desc">Kelola rekening</div>
                                 </div>
                             </a>
-                            <a href="#" class="nav-item" data-page="goals" onclick="window.ui.showPage('goals')">
+                            <a href="#" class="nav-item" data-page="goals">
                                 <span class="nav-icon">🎯</span>
                                 <div class="nav-content">
                                     <div class="nav-text">Target</div>
@@ -240,7 +240,7 @@ class AuthUI {
 
                         <div class="nav-section">
                             <div class="nav-section-title">Analisis</div>
-                            <a href="#" class="nav-item" data-page="analytics" onclick="window.ui.showPage('analytics')">
+                            <a href="#" class="nav-item" data-page="analytics">
                                 <span class="nav-icon">📈</span>
                                 <div class="nav-content">
                                     <div class="nav-text">Analisis</div>
@@ -303,23 +303,23 @@ class AuthUI {
 
                 <!-- Bottom Navigation -->
                 <div class="bottom-nav">
-                    <a href="#" class="bottom-nav-item active" data-page="dashboard" onclick="window.ui.showPage('dashboard')">
+                    <a href="#" class="bottom-nav-item active" data-page="dashboard">
                         <span class="bottom-nav-icon">📊</span>
                         <span class="bottom-nav-text">Dashboard</span>
                     </a>
-                    <a href="#" class="bottom-nav-item" data-page="transactions" onclick="window.ui.showPage('transactions')">
+                    <a href="#" class="bottom-nav-item" data-page="transactions">
                         <span class="bottom-nav-icon">💳</span>
                         <span class="bottom-nav-text">Transaksi</span>
                     </a>
-                    <a href="#" class="bottom-nav-item" data-page="accounts" onclick="window.ui.showPage('accounts')">
+                    <a href="#" class="bottom-nav-item" data-page="accounts">
                         <span class="bottom-nav-icon">🏦</span>
                         <span class="bottom-nav-text">Akun</span>
                     </a>
-                    <a href="#" class="bottom-nav-item" data-page="goals" onclick="window.ui.showPage('goals')">
+                    <a href="#" class="bottom-nav-item" data-page="goals">
                         <span class="bottom-nav-icon">🎯</span>
                         <span class="bottom-nav-text">Target</span>
                     </a>
-                    <a href="#" class="bottom-nav-item" data-page="analytics" onclick="window.ui.showPage('analytics')">
+                    <a href="#" class="bottom-nav-item" data-page="analytics">
                         <span class="bottom-nav-icon">📈</span>
                         <span class="bottom-nav-text">Analisis</span>
                     </a>
@@ -330,7 +330,7 @@ class AuthUI {
       if (window.ui && window.ui.setBudgetManager) {
         // Use existing SimpleUI for basic navigation
         window.ui.setBudgetManager(this.budgetManager);
-        window.ui.showPage("dashboard");
+        window.ui.smoothSwitchView("dashboard");
       }
 
       // Initialize full ModernBudgetUI for proper UI components

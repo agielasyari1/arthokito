@@ -399,7 +399,7 @@
           // Initialize Auth UI first (this will handle showing the auth screen or main app)
           console.log("Initializing Auth UI...");
           if (window.authUI) {
-          await window.authUI.initialize();
+            await window.authUI.initialize();
           }
 
           // Create a simple UI class for compatibility
@@ -409,6 +409,13 @@
               this.currentPage = "dashboard";
               this.modernUI = null;
               this.components = null;
+            }
+
+            setBudgetManager(manager) {
+              this.budgetManager = manager;
+              if (this.modernUI) {
+                this.modernUI.budgetManager = manager;
+              }
             }
 
             async initialize() {
@@ -438,12 +445,31 @@
                   console.log("Theme initialized");
                 }
 
+                // Bind navigation events
+                document.addEventListener("click", (e) => {
+                  if (e.target.closest(".nav-item") || e.target.closest(".bottom-nav-item")) {
+                    e.preventDefault();
+                    const viewName = e.target.closest("[data-page]").dataset.page;
+                    if (viewName) {
+                      this.smoothSwitchView(viewName);
+                    }
+                  }
+                });
+
                 console.log("ModernBudgetUI initialized successfully");
               } catch (error) {
                 console.error("Failed to initialize ModernBudgetUI:", error);
               }
 
               return true;
+            }
+
+            smoothSwitchView(view) {
+              if (this.modernUI) {
+                this.modernUI.smoothSwitchView(view);
+              } else {
+                console.warn("ModernBudgetUI not available for navigation");
+              }
             }
           }
 
@@ -475,9 +501,9 @@
 
           window.hideModal = function () {
             try {
-                const modalContainer = document.getElementById("modalContainer");
-                if (modalContainer) {
-                  modalContainer.style.display = "none";
+              const modalContainer = document.getElementById("modalContainer");
+              if (modalContainer) {
+                modalContainer.style.display = "none";
                 modalContainer.classList.remove("active");
               }
             } catch (error) {
@@ -522,9 +548,9 @@
           };
 
           // Hide loading overlay
-            if (loadingOverlay) {
-              loadingOverlay.classList.remove("active");
-            }
+          if (loadingOverlay) {
+            loadingOverlay.classList.remove("active");
+          }
 
           console.log("BudgetKu App Started Successfully");
         } catch (error) {
