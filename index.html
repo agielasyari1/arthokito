@@ -384,19 +384,22 @@
           // Show loading
           const loadingOverlay = document.getElementById("loading-overlay");
 
-          // Initialize core managers
-          console.log("Initializing core managers...");
-          window.budgetManager = new BudgetManager();
-          window.analytics = new Analytics(window.budgetManager);
-          window.components = new UIComponents(window.budgetManager, window.analytics);
-
-          // Initialize Supabase Budget Manager
+          // Initialize Supabase Budget Manager first
           console.log("Initializing Supabase integration...");
           if (window.supabaseBudgetManager) {
             await window.supabaseBudgetManager.initialize();
+            // Use SupabaseBudgetManager as the main budget manager
+            window.budgetManager = window.supabaseBudgetManager;
+          } else {
+            console.warn("Supabase integration not available, falling back to local storage");
+            window.budgetManager = new BudgetManager();
           }
 
-          // Initialize Auth UI first (this will handle showing the auth screen or main app)
+          // Initialize analytics and components with the budget manager
+          window.analytics = new Analytics(window.budgetManager);
+          window.components = new UIComponents(window.budgetManager, window.analytics);
+
+          // Initialize Auth UI (this will handle showing the auth screen or main app)
           console.log("Initializing Auth UI...");
           if (window.authUI) {
             await window.authUI.initialize();
