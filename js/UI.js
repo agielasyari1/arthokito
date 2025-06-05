@@ -880,6 +880,10 @@ class ModernBudgetUI {
     // Bind goal import modal
     window.showGoalImportModal = () => this.showGoalImportModal();
 
+    // Bind reset and demo data functions
+    window.resetAllData = () => this.resetAllData();
+    window.loadDemoData = () => this.loadDemoData();
+
     // Add animations to stat cards on dashboard
     const statCards = document.querySelectorAll(".stat-card");
     statCards.forEach((card, index) => {
@@ -895,40 +899,119 @@ class ModernBudgetUI {
 
   // ===== DEMO DATA & RESET =====
   loadDemoData() {
-    if (confirm("Ini akan mengganti semua data yang ada dengan data demo. Lanjutkan?")) {
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Load Demo Data</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="warning-text">⚠️ Warning: This will overwrite your current data!</p>
+                <p>Are you sure you want to load demo data? This will:</p>
+                <ul>
+                    <li>Create sample accounts</li>
+                    <li>Add sample transactions</li>
+                    <li>Create sample goals</li>
+                    <li>Set up sample categories</li>
+                </ul>
+                <div class="form-group">
+                    <button class="btn btn-primary" id="confirmDemoBtn">Yes, Load Demo Data</button>
+                    <button class="btn btn-secondary" id="cancelDemoBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.classList.add("show");
+
+    const confirmBtn = modal.querySelector("#confirmDemoBtn");
+    const cancelBtn = modal.querySelector("#cancelDemoBtn");
+    const closeBtn = modal.querySelector(".close-modal");
+
+    const closeModal = () => {
+      modal.remove();
+    };
+
+    confirmBtn.addEventListener("click", async () => {
       try {
-        this.budgetManager.generateDemoData();
-        this.components.showToast(
-          "Data demo berhasil dimuat! Silakan cek semua halaman untuk melihat fitur-fitur analisis.",
-          "success"
-        );
+        await this.budgetManager.generateDemoData();
+        this.showNotification("Demo data has been loaded successfully", "success");
         this.render();
-        this.updateUserBalance();
-        this.preloadData();
+        closeModal();
       } catch (error) {
-        this.components.showToast("Gagal memuat data demo: " + error.message, "error");
+        console.error("Failed to load demo data:", error);
+        this.showNotification("Failed to load demo data: " + error.message, "error");
       }
-    }
+    });
+
+    cancelBtn.addEventListener("click", closeModal);
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
   }
 
   resetAllData() {
-    if (
-      confirm(
-        "⚠️ PERINGATAN: Ini akan menghapus SEMUA data (akun, transaksi, target, budget). Yakin ingin melanjutkan?"
-      )
-    ) {
-      if (confirm("Konfirmasi sekali lagi: Semua data akan hilang permanen. Lanjutkan?")) {
-        try {
-          this.budgetManager.resetAllData();
-          this.components.showToast("Semua data berhasil dihapus! Aplikasi kembali ke kondisi awal.", "success");
-          this.render();
-          this.updateUserBalance();
-          this.preloadData();
-        } catch (error) {
-          this.components.showToast("Gagal reset data: " + error.message, "error");
-        }
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reset All Data</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="warning-text">⚠️ Warning: This action cannot be undone!</p>
+                <p>Are you sure you want to reset all data? This will:</p>
+                <ul>
+                    <li>Delete all transactions</li>
+                    <li>Reset all account balances</li>
+                    <li>Delete all goals</li>
+                    <li>Clear all settings</li>
+                </ul>
+                <div class="form-group">
+                    <button class="btn btn-danger" id="confirmResetBtn">Yes, Reset Everything</button>
+                    <button class="btn btn-secondary" id="cancelResetBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.classList.add("show");
+
+    const confirmBtn = modal.querySelector("#confirmResetBtn");
+    const cancelBtn = modal.querySelector("#cancelResetBtn");
+    const closeBtn = modal.querySelector(".close-modal");
+
+    const closeModal = () => {
+      modal.remove();
+    };
+
+    confirmBtn.addEventListener("click", async () => {
+      try {
+        await this.budgetManager.resetAllData();
+        this.showNotification("All data has been reset successfully", "success");
+        this.render();
+        closeModal();
+      } catch (error) {
+        console.error("Failed to reset data:", error);
+        this.showNotification("Failed to reset data: " + error.message, "error");
       }
-    }
+    });
+
+    cancelBtn.addEventListener("click", closeModal);
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
   }
 
   // ===== PLACEHOLDER METHODS FOR OTHER VIEWS =====
