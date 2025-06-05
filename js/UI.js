@@ -1,44 +1,29 @@
 // ===== MAIN UI CLASS =====
 class ModernBudgetUI {
-  constructor(budgetManager) {
-    this.budgetManager = budgetManager;
-    this.currentView = "dashboard";
-    this.cache = {
-      accounts: [],
-      transactions: [],
-      goals: [],
-      categories: [],
-      monthlyStats: null,
-    };
-    this.analytics = new Analytics(budgetManager);
+  constructor(budgetManager = null) {
+    this.budgetManager = budgetManager || new BudgetManager();
+    this.analytics = new Analytics(this.budgetManager);
     this.components = new UIComponents(this.budgetManager, this.analytics);
+    this.currentView = "dashboard";
     this.isTransitioning = false;
     this.analyticsMode = "overview"; // overview, patterns, predictions, budget
     this.initialized = false;
-    this.init();
   }
 
-  setBudgetManager(manager) {
-    this.budgetManager = manager;
-    this.analytics = new Analytics(manager);
-    // Refresh current view with new budget manager
-    this.render();
-  }
-
-  async init() {
+  async initialize() {
     if (this.initialized) return;
 
-    try {
-      this.createLayout();
-      this.bindEvents();
-      this.initializeTheme();
-      this.preloadData();
-      this.initialized = true;
-      console.log("✅ ModernBudgetUI initialized");
-    } catch (error) {
-      console.error("❌ Failed to initialize ModernBudgetUI:", error);
-      this.showToast("Failed to initialize application", "error");
-    }
+    this.bindEvents();
+    this.initializeTheme();
+    this.preloadData();
+    this.initialized = true;
+    console.log("✅ ModernBudgetUI initialized");
+  }
+
+  init() {
+    this.createLayout();
+    this.initialize();
+    this.render();
   }
 
   // Method for compatibility with SimpleUI
@@ -361,86 +346,54 @@ class ModernBudgetUI {
   }
 
   // ===== DATA PRELOADING =====
-  async preloadData() {
-    try {
-      // Load all necessary data
-      const [accounts, transactions, goals, categories, monthlyStats] = await Promise.all([
-        this.budgetManager.getAccounts(),
-        this.budgetManager.getTransactions(),
-        this.budgetManager.getGoals(),
-        this.budgetManager.getCategories(),
-        this.budgetManager.getMonthlyStats(),
-      ]);
-
-      // Update cache
-      this.cache = {
-        accounts,
-        transactions,
-        goals,
-        categories,
-        monthlyStats,
-      };
-
-      console.log("✅ Data preloaded successfully");
-    } catch (error) {
-      console.error("❌ Failed to preload data:", error);
-      throw error;
+  preloadData() {
+    // Initialize demo data if needed
+    if (this.budgetManager.data.accounts.length === 0) {
+      console.log("📝 No data found, ready for demo data or manual entry");
     }
   }
 
   // ===== RENDER METHODS =====
-  async render() {
-    try {
-      // Preload data
-      await this.preloadData();
-
-      // Update user balance
-      this.updateUserBalance();
-
-      // Render current view
-      switch (this.currentView) {
-        case "dashboard":
-          await this.renderDashboard();
-          break;
-        case "transactions":
-          await this.renderTransactions();
-          break;
-        case "accounts":
-          await this.renderAccounts();
-          break;
-        case "goals":
-          await this.renderGoals();
-          break;
-        case "analytics":
-          await this.renderAdvancedAnalytics();
-          break;
-      }
-
-      // Initialize page-specific features
-      this.initializePageSpecific();
-
-      // Bind events
-      this.bindTransactionEvents();
-      this.bindAccountEvents();
-      this.bindGoalEvents();
-
-      // Initialize charts if needed
-      if (this.currentView === "analytics") {
-        this.initializeAnalyticsCharts();
-      }
-
-      // Add animations
-      this.animateStatistics();
-
-      console.log(`✅ Rendered ${this.currentView} view`);
-    } catch (error) {
-      console.error(`❌ Failed to render ${this.currentView} view:`, error);
-      this.showToast("Failed to render view", "error");
+  render() {
+    if (!this.currentView) {
+      this.currentView = "dashboard";
     }
+
+    const contentArea = document.getElementById("content-area");
+    if (!contentArea) {
+      console.error("❌ Content area not found");
+      return;
+    }
+
+    let content = "";
+
+    switch (this.currentView) {
+      case "dashboard":
+        content = this.renderDashboard();
+        break;
+      case "transactions":
+        content = this.renderTransactions();
+        break;
+      case "accounts":
+        content = this.renderAccounts();
+        break;
+      case "goals":
+        content = this.renderGoals();
+        break;
+      case "analytics":
+        content = this.renderAdvancedAnalytics();
+        break;
+      default:
+        content = this.renderDashboard();
+    }
+
+    contentArea.innerHTML = content;
+    this.initializePageSpecific();
+    this.updateUserBalance();
   }
 
   // ===== DASHBOARD RENDERING =====
-  async renderDashboard() {
+  renderDashboard() {
     console.log("🎯 renderDashboard called");
     console.log("Budget manager:", this.budgetManager);
     console.log("Analytics:", this.analytics);
@@ -551,7 +504,7 @@ class ModernBudgetUI {
   }
 
   // ===== TRANSACTIONS PAGE RENDERING =====
-  async renderTransactions() {
+  renderTransactions() {
     const stats = this.analytics.getMonthlyStats();
     const allTransactions = this.budgetManager.data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -1848,167 +1801,6 @@ class ModernBudgetUI {
     };
 
     reader.readAsText(file);
-  }
-
-  bindTransactionEvents() {
-    // Quick add buttons
-    document.querySelectorAll(".quick-add-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const type = btn.getAttribute("data-type");
-        if (type) {
-          this.showQuickAddModal(type);
-        }
-      });
-    });
-
-    // Transaction actions
-    document.querySelectorAll(".transaction-action").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const action = btn.getAttribute("data-action");
-        const transactionId = btn.getAttribute("data-transaction-id");
-        if (action && transactionId) {
-          this.handleTransactionAction(action, transactionId);
-        }
-      });
-    });
-  }
-
-  bindAccountEvents() {
-    // Account actions
-    document.querySelectorAll(".account-action").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const action = btn.getAttribute("data-action");
-        const accountId = btn.getAttribute("data-account-id");
-        if (action && accountId) {
-          this.handleAccountAction(action, accountId);
-        }
-      });
-    });
-
-    // Add account button
-    const addAccountBtn = document.querySelector(".add-account-btn");
-    if (addAccountBtn) {
-      addAccountBtn.addEventListener("click", () => {
-        this.showAddAccountModal();
-      });
-    }
-  }
-
-  bindGoalEvents() {
-    // Goal actions
-    document.querySelectorAll(".goal-action").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const action = btn.getAttribute("data-action");
-        const goalId = btn.getAttribute("data-goal-id");
-        if (action && goalId) {
-          this.handleGoalAction(action, goalId);
-        }
-      });
-    });
-
-    // Add goal button
-    const addGoalBtn = document.querySelector(".add-goal-btn");
-    if (addGoalBtn) {
-      addGoalBtn.addEventListener("click", () => {
-        this.showAddGoalModal();
-      });
-    }
-
-    // Import/Export buttons
-    const importBtn = document.querySelector(".import-goals-btn");
-    const exportBtn = document.querySelector(".export-goals-btn");
-
-    if (importBtn) {
-      importBtn.addEventListener("click", () => {
-        this.showGoalImportModal();
-      });
-    }
-
-    if (exportBtn) {
-      exportBtn.addEventListener("click", () => {
-        this.exportGoals();
-      });
-    }
-  }
-
-  async handleTransactionAction(action, transactionId) {
-    try {
-      switch (action) {
-        case "edit":
-          await this.editTransaction(transactionId);
-          break;
-        case "delete":
-          await this.deleteTransaction(transactionId);
-          break;
-      }
-      // Refresh view
-      await this.render();
-    } catch (error) {
-      console.error("❌ Failed to handle transaction action:", error);
-      this.showToast("Failed to handle transaction action", "error");
-    }
-  }
-
-  async handleAccountAction(action, accountId) {
-    try {
-      switch (action) {
-        case "edit":
-          await this.editAccount(accountId);
-          break;
-        case "delete":
-          await this.deleteAccount(accountId);
-          break;
-      }
-      // Refresh view
-      await this.render();
-    } catch (error) {
-      console.error("❌ Failed to handle account action:", error);
-      this.showToast("Failed to handle account action", "error");
-    }
-  }
-
-  async handleGoalAction(action, goalId) {
-    try {
-      switch (action) {
-        case "edit":
-          await this.editGoal(goalId);
-          break;
-        case "delete":
-          await this.deleteGoal(goalId);
-          break;
-        case "update-progress":
-          await this.updateGoalProgress(goalId);
-          break;
-      }
-      // Refresh view
-      await this.render();
-    } catch (error) {
-      console.error("❌ Failed to handle goal action:", error);
-      this.showToast("Failed to handle goal action", "error");
-    }
-  }
-
-  async exportGoals() {
-    try {
-      const goals = await this.budgetManager.getGoals();
-      const blob = new Blob([JSON.stringify(goals, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "budget-goals.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      this.showToast("Goals exported successfully", "success");
-    } catch (error) {
-      console.error("❌ Failed to export goals:", error);
-      this.showToast("Failed to export goals", "error");
-    }
   }
 }
 

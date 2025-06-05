@@ -408,338 +408,81 @@
           // Create a simple UI class for compatibility
           class SimpleUI {
             constructor() {
-              this.budgetManager = null;
+              this.budgetManager = window.budgetManager;
+              this.currentPage = "dashboard";
               this.modernUI = null;
-              this.analytics = null;
-              this.currentView = "dashboard";
-              this.isInitialized = false;
-              this.initialize();
-            }
-
-            async initialize() {
-              try {
-                // Initialize SupabaseBudgetManager if available
-                if (window.supabaseBudgetManager) {
-                  this.budgetManager = window.supabaseBudgetManager;
-                  await this.budgetManager.initialize();
-                } else {
-                  // Fallback to local BudgetManager
-                  this.budgetManager = new BudgetManager();
-                  await this.budgetManager.loadData();
-                }
-
-                // Initialize ModernBudgetUI
-                this.modernUI = new ModernBudgetUI(this.budgetManager);
-                await this.modernUI.init();
-
-                // Initialize Analytics
-                this.analytics = new Analytics(this.budgetManager);
-                await this.analytics.initialize();
-
-                // Bind all menu events
-                this.bindMenuEvents();
-
-                // Initialize page-specific features
-                this.initializePageSpecific();
-
-                // Show initial view
-                this.smoothSwitchView("dashboard");
-
-                this.isInitialized = true;
-                console.log("✅ SimpleUI initialized successfully");
-              } catch (error) {
-                console.error("❌ Failed to initialize SimpleUI:", error);
-                this.showError("Failed to initialize application");
-              }
-            }
-
-            bindMenuEvents() {
-              // Main navigation
-              document.querySelectorAll("[data-page]").forEach((element) => {
-                element.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const page = element.getAttribute("data-page");
-                  if (page) {
-                    this.smoothSwitchView(page);
-                  }
-                });
-              });
-
-              // Analytics tabs
-              document.querySelectorAll(".analytics-tab").forEach((tab) => {
-                tab.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const tabName = tab.getAttribute("data-tab");
-                  if (tabName && this.modernUI) {
-                    this.modernUI.switchAnalyticsTab(tabName);
-                  }
-                });
-              });
-
-              // Quick add buttons
-              document.querySelectorAll(".quick-add-btn").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const type = btn.getAttribute("data-type");
-                  if (type && this.modernUI) {
-                    this.modernUI.showQuickAddModal(type);
-                  }
-                });
-              });
-
-              // Account actions
-              document.querySelectorAll(".account-action").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const action = btn.getAttribute("data-action");
-                  const accountId = btn.getAttribute("data-account-id");
-                  if (action && accountId && this.modernUI) {
-                    this.modernUI.handleAccountAction(action, accountId);
-                  }
-                });
-              });
-
-              // Goal actions
-              document.querySelectorAll(".goal-action").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const action = btn.getAttribute("data-action");
-                  const goalId = btn.getAttribute("data-goal-id");
-                  if (action && goalId && this.modernUI) {
-                    this.modernUI.handleGoalAction(action, goalId);
-                  }
-                });
-              });
-
-              // Transaction actions
-              document.querySelectorAll(".transaction-action").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const action = btn.getAttribute("data-action");
-                  const transactionId = btn.getAttribute("data-transaction-id");
-                  if (action && transactionId && this.modernUI) {
-                    this.modernUI.handleTransactionAction(action, transactionId);
-                  }
-                });
-              });
-
-              // Theme toggle
-              const themeToggle = document.getElementById("themeToggle");
-              if (themeToggle) {
-                themeToggle.addEventListener("click", () => {
-                  this.modernUI.toggleTheme();
-                });
-              }
-
-              // Mobile menu toggle
-              const menuToggle = document.getElementById("menuToggle");
-              if (menuToggle) {
-                menuToggle.addEventListener("click", () => {
-                  this.modernUI.toggleMobileSidebar();
-                });
-              }
-
-              // Export/Import actions
-              document.querySelectorAll(".data-action").forEach((btn) => {
-                btn.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  const action = btn.getAttribute("data-action");
-                  if (action && this.modernUI) {
-                    switch (action) {
-                      case "export":
-                        this.modernUI.exportBudgetReport();
-                        break;
-                      case "import":
-                        this.modernUI.showImportModal();
-                        break;
-                      case "reset":
-                        this.modernUI.showResetConfirmation();
-                        break;
-                    }
-                  }
-                });
-              });
-            }
-
-            initializePageSpecific() {
-              // Initialize charts and analytics
-              if (this.analytics) {
-                this.analytics.initializeCharts();
-              }
-
-              // Initialize animations
-              this.initializeAnimations();
-
-              // Initialize keyboard shortcuts
-              this.initializeKeyboardShortcuts();
-
-              // Initialize swipe gestures
-              this.initializeSwipeGestures();
-            }
-
-            initializeAnimations() {
-              // Add animations to stat cards
-              document.querySelectorAll(".stat-card").forEach((card) => {
-                card.classList.add("animate-in");
-              });
-
-              // Add animations to list items
-              document.querySelectorAll(".list-item").forEach((item, index) => {
-                item.style.animationDelay = `${index * 0.1}s`;
-                item.classList.add("animate-in");
-              });
-            }
-
-            initializeKeyboardShortcuts() {
-              document.addEventListener("keydown", (e) => {
-                // Alt + N for new transaction
-                if (e.altKey && e.key === "n") {
-                  e.preventDefault();
-                  this.modernUI.showQuickAddModal("expense");
-                }
-                // Alt + A for new account
-                if (e.altKey && e.key === "a") {
-                  e.preventDefault();
-                  this.modernUI.showAddAccountModal();
-                }
-                // Alt + G for new goal
-                if (e.altKey && e.key === "g") {
-                  e.preventDefault();
-                  this.modernUI.showAddGoalModal();
-                }
-                // Alt + B for budget settings
-                if (e.altKey && e.key === "b") {
-                  e.preventDefault();
-                  this.modernUI.showSetBudgetModal();
-                }
-              });
-            }
-
-            initializeSwipeGestures() {
-              let touchStartX = 0;
-              let touchEndX = 0;
-
-              document.addEventListener("touchstart", (e) => {
-                touchStartX = e.changedTouches[0].screenX;
-              });
-
-              document.addEventListener("touchend", (e) => {
-                touchEndX = e.changedTouches[0].screenX;
-                this.handleSwipe(touchStartX, touchEndX);
-              });
-            }
-
-            handleSwipe(startX, endX) {
-              const swipeThreshold = 50;
-              const diff = startX - endX;
-
-              if (Math.abs(diff) < swipeThreshold) return;
-
-              const views = ["dashboard", "transactions", "accounts", "goals", "analytics"];
-              const currentIndex = views.indexOf(this.currentView);
-
-              if (diff > 0 && currentIndex < views.length - 1) {
-                // Swipe left - next view
-                this.smoothSwitchView(views[currentIndex + 1]);
-              } else if (diff < 0 && currentIndex > 0) {
-                // Swipe right - previous view
-                this.smoothSwitchView(views[currentIndex - 1]);
-              }
-            }
-
-            async smoothSwitchView(view) {
-              if (!this.isInitialized || view === this.currentView) return;
-
-              try {
-                // Show loading state
-                this.modernUI.showLoadingOverlay();
-
-                // Update current view
-                this.currentView = view;
-
-                // Update navigation states
-                this.updateNavigationStates(view);
-
-                // Update page header
-                this.updatePageHeader(view);
-
-                // Render the new view
-                await this.modernUI.render();
-
-                // Initialize page-specific features
-                this.initializePageSpecific();
-
-                // Hide loading state
-                this.modernUI.hideLoadingOverlay();
-
-                // Close mobile sidebar if open
-                this.modernUI.closeMobileSidebar();
-
-                console.log(`✅ Switched to ${view} view`);
-              } catch (error) {
-                console.error(`❌ Failed to switch to ${view} view:`, error);
-                this.showError("Failed to switch view");
-              }
-            }
-
-            updateNavigationStates(view) {
-              // Update main navigation
-              document.querySelectorAll("[data-page]").forEach((element) => {
-                const page = element.getAttribute("data-page");
-                if (page === view) {
-                  element.classList.add("active");
-                } else {
-                  element.classList.remove("active");
-                }
-              });
-
-              // Update bottom navigation
-              document.querySelectorAll(".bottom-nav-item").forEach((element) => {
-                const page = element.getAttribute("data-page");
-                if (page === view) {
-                  element.classList.add("active");
-                } else {
-                  element.classList.remove("active");
-                }
-              });
-            }
-
-            updatePageHeader(view) {
-              const header = document.querySelector(".page-header h1");
-              if (header) {
-                switch (view) {
-                  case "dashboard":
-                    header.textContent = "Dashboard";
-                    break;
-                  case "transactions":
-                    header.textContent = "Transactions";
-                    break;
-                  case "accounts":
-                    header.textContent = "Accounts";
-                    break;
-                  case "goals":
-                    header.textContent = "Goals";
-                    break;
-                  case "analytics":
-                    header.textContent = "Analytics";
-                    break;
-                }
-              }
-            }
-
-            showError(message) {
-              if (this.modernUI) {
-                this.modernUI.showToast(message, "error");
-              }
+              this.components = null;
             }
 
             setBudgetManager(manager) {
               this.budgetManager = manager;
               if (this.modernUI) {
-                this.modernUI.setBudgetManager(manager);
+                this.modernUI.budgetManager = manager;
               }
-              if (this.analytics) {
-                this.analytics.setBudgetManager(manager);
+            }
+
+            async initialize() {
+              console.log("Simple UI initialized");
+
+              // Initialize components
+              try {
+                this.components =
+                  window.components || new UIComponents(this.budgetManager, new Analytics(this.budgetManager));
+                console.log("UI Components initialized");
+              } catch (error) {
+                console.warn("Failed to initialize UI Components:", error);
+              }
+
+              // Initialize ModernBudgetUI immediately
+              try {
+                console.log("Initializing ModernBudgetUI...");
+                this.modernUI = new ModernBudgetUI(this.budgetManager);
+                await this.modernUI.initialize();
+
+                // Set global reference
+                window.modernUI = this.modernUI;
+
+                // Initialize theme after ModernBudgetUI is ready
+                if (this.modernUI.initializeTheme) {
+                  this.modernUI.initializeTheme();
+                  console.log("Theme initialized");
+                }
+
+                // Bind navigation events
+                document.addEventListener("click", (e) => {
+                  if (e.target.closest(".nav-item") || e.target.closest(".bottom-nav-item")) {
+                    e.preventDefault();
+                    const viewName = e.target.closest("[data-page]").dataset.page;
+                    if (viewName) {
+                      this.smoothSwitchView(viewName);
+                    }
+                  }
+                });
+
+                // Bind analytics tab events
+                document.addEventListener("click", (e) => {
+                  if (e.target.closest(".analytics-tab")) {
+                    e.preventDefault();
+                    const tabName = e.target.closest(".analytics-tab").dataset.tab;
+                    if (tabName && this.modernUI) {
+                      this.modernUI.switchAnalyticsTab(tabName);
+                    }
+                  }
+                });
+
+                console.log("ModernBudgetUI initialized successfully");
+              } catch (error) {
+                console.error("Failed to initialize ModernBudgetUI:", error);
+              }
+
+              return true;
+            }
+
+            smoothSwitchView(view) {
+              if (this.modernUI) {
+                this.modernUI.smoothSwitchView(view);
+              } else {
+                console.warn("ModernBudgetUI not available for navigation");
               }
             }
           }

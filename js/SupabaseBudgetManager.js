@@ -562,42 +562,18 @@ class SupabaseBudgetManager {
     if (!this.currentUser) throw new Error("User not authenticated");
 
     try {
-      // Generate a proper UUID for the transaction
-      const transactionId = crypto.randomUUID();
-
       const transaction = {
-        id: transactionId,
         user_id: this.currentUser.id,
         type,
         amount: parseFloat(amount),
-        category_id: categoryId,
-        account_id: accountId,
+        category_id: parseInt(categoryId),
+        account_id: parseInt(accountId),
         description: description.trim(),
         transaction_date: date || new Date().toISOString().split("T")[0],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       // Insert transaction
-      const { data, error } = await this.supabase
-        .from("transactions")
-        .insert(transaction)
-        .select(
-          `
-          *,
-          accounts (
-            id,
-            name
-          ),
-          categories (
-            id,
-            name,
-            icon,
-            color
-          )
-        `
-        )
-        .single();
+      const { data, error } = await this.supabase.from("transactions").insert(transaction).select().single();
 
       if (error) throw error;
 
@@ -614,10 +590,7 @@ class SupabaseBudgetManager {
 
       const { error: updateError } = await this.supabase
         .from("accounts")
-        .update({
-          balance: newBalance,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ balance: newBalance })
         .eq("id", accountId);
 
       if (updateError) throw updateError;
@@ -627,7 +600,6 @@ class SupabaseBudgetManager {
       const accountIndex = this.cache.accounts.findIndex((a) => a.id === accountId);
       if (accountIndex !== -1) {
         this.cache.accounts[accountIndex].balance = newBalance;
-        this.cache.accounts[accountIndex].updated_at = new Date().toISOString();
       }
 
       return data;
@@ -664,14 +636,9 @@ class SupabaseBudgetManager {
         oldAccount.balance - (oldTransaction.type === "income" ? oldTransaction.amount : -oldTransaction.amount);
 
       // Update transaction
-      const updateData = {
-        ...data,
-        updated_at: new Date().toISOString(),
-      };
-
       const { error: updateError } = await this.supabase
         .from("transactions")
-        .update(updateData)
+        .update(data)
         .eq("id", id)
         .eq("user_id", this.currentUser.id);
 
@@ -680,10 +647,7 @@ class SupabaseBudgetManager {
       // Update account balance
       const { error: accountError } = await this.supabase
         .from("accounts")
-        .update({
-          balance: oldBalance + (data.type === "income" ? data.amount : -data.amount),
-          updated_at: new Date().toISOString(),
-        })
+        .update({ balance: oldBalance + (data.type === "income" ? data.amount : -data.amount) })
         .eq("id", data.account_id);
 
       if (accountError) throw accountError;
@@ -691,10 +655,7 @@ class SupabaseBudgetManager {
       // Update cache
       const index = this.cache.transactions.findIndex((t) => t.id === id);
       if (index !== -1) {
-        this.cache.transactions[index] = {
-          ...this.cache.transactions[index],
-          ...updateData,
-        };
+        this.cache.transactions[index] = { ...this.cache.transactions[index], ...data };
       }
 
       return this.cache.transactions[index];
@@ -740,10 +701,7 @@ class SupabaseBudgetManager {
 
       const { error: updateError } = await this.supabase
         .from("accounts")
-        .update({
-          balance: newBalance,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ balance: newBalance })
         .eq("id", transaction.account_id);
 
       if (updateError) throw updateError;
@@ -757,7 +715,6 @@ class SupabaseBudgetManager {
       const accountIndex = this.cache.accounts.findIndex((a) => a.id === transaction.account_id);
       if (accountIndex !== -1) {
         this.cache.accounts[accountIndex].balance = newBalance;
-        this.cache.accounts[accountIndex].updated_at = new Date().toISOString();
       }
 
       return true;
