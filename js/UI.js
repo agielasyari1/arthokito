@@ -844,7 +844,10 @@ class ModernBudgetUI {
       // Add event listeners for analytics tabs
       document.querySelectorAll(".analytics-tab").forEach((tab) => {
         tab.addEventListener("click", () => {
-          this.switchAnalyticsTab(tab.dataset.tab);
+          const tabName = tab.dataset.tab;
+          if (tabName) {
+            this.switchAnalyticsTab(tabName);
+          }
         });
       });
     }

@@ -456,6 +456,17 @@
                   }
                 });
 
+                // Bind analytics tab events
+                document.addEventListener("click", (e) => {
+                  if (e.target.closest(".analytics-tab")) {
+                    e.preventDefault();
+                    const tabName = e.target.closest(".analytics-tab").dataset.tab;
+                    if (tabName && this.modernUI) {
+                      this.modernUI.switchAnalyticsTab(tabName);
+                    }
+                  }
+                });
+
                 console.log("ModernBudgetUI initialized successfully");
               } catch (error) {
                 console.error("Failed to initialize ModernBudgetUI:", error);
